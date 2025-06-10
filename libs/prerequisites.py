@@ -1,3 +1,15 @@
+'''
+    Author: Axel Raboonik
+    Email : raboonik@gmail.com
+    
+    Github: https://github.com/raboonik
+    
+    Article: https://iopscience.iop.org/article/10.3847/1538-4357/adc917
+    
+    Description: Script to include all the libraries required for the EEDM code
+'''
+
+
 import h5py   as     h5
 import numpy  as     np
 import scipy  as     spy
@@ -5,9 +17,6 @@ import mpi4py
 import glob, os, subprocess, sys   # subprocess for storing output of bash commands
 from os import system as bash
 from os import chdir as cd
-
-
-# from random import *
 
 def system_call(command):
     p = subprocess.Popen([command], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)

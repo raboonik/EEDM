@@ -1,5 +1,16 @@
 from libs import prerequisites as pre
 
+'''
+    Author: Axel Raboonik
+    Email : raboonik@gmail.com
+    
+    Github: https://github.com/raboonik
+    
+    Article: https://iopscience.iop.org/article/10.3847/1538-4357/adc917
+    
+    Description: Functions to compute partial derivatives
+'''
+
 def partial(func, axis, spacing):
     fshape = func.shape
     ndim = len(fshape)

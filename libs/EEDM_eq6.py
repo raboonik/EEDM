@@ -1,5 +1,19 @@
 from libs import prerequisites as pre
 import numpy as np
+'''
+    Author: Axel Raboonik
+    Email : raboonik@gmail.com
+    
+    Github: https://github.com/raboonik
+    
+    Article: https://iopscience.iop.org/article/10.3847/1538-4357/adc917
+    
+    Description: Script to compute Equations 6 of Paper III (linked above)
+'''
+
+
+
+
 gamma = pre.gamma
 g     = pre.g
 import sys

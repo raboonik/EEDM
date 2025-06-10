@@ -21,6 +21,7 @@ from libs import prerequisites as pre
 simCode   = "lare"
 dataExt   = "sdf" # sdf or cfd
 datapath  = "/home/user/simulationDir/"
+datapath  = "/home/abbas/temp/Lucas_GT_subregion_stratifiedVertical"
 
 # Data dimensionality (True: dimensional, False: non-dimensional)
 dimensional = False

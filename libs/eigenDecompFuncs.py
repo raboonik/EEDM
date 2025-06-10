@@ -1,5 +1,17 @@
 from libs import prerequisites as pre
 
+'''
+    Author: Axel Raboonik
+    Email : raboonik@gmail.com
+    
+    Github: https://github.com/raboonik
+    
+    Article: https://iopscience.iop.org/article/10.3847/1538-4357/adc917
+    
+    Description: Functions to aid in reading simulation data and working out 
+                 the subgrid associated with the cropping frame 
+'''
+
 def lare3dGetCellVals(data,quantity):
     '''
         Here we perform 2-point-per-direction interpolations of various raw quantities.

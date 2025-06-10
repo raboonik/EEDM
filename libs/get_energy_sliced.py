@@ -1,6 +1,18 @@
 from libs import prerequisites as pre
 import numpy as np
 
+'''
+    Author: Axel Raboonik
+    Email : raboonik@gmail.com
+    
+    Github: https://github.com/raboonik
+    
+    Article: https://iopscience.iop.org/article/10.3847/1538-4357/adc917
+    
+    Description: Functions to aid in working out the 2D slices used in the
+                 computation of Equation 9
+'''
+
 def get_slice_2d(axis, nq0, xc,yc,zc,localOutpath, slq1=0, elq1=0, slq2=0, elq2=0):
     nx = len(xc)
     ny = len(yc)
@@ -100,39 +112,6 @@ def get_energy_get_target_hdf(localOutpath,slicingPlane,slicingPnt,pntOrLngth):
     
     if len(targetFile) == 0: raise ValueError("No HDF target file with the prescrived slicing coordinates found!")
     else: return hdf
-
-# get_energy_plot_dict(hdf):
-#     # Figure out the timestep at which the pulse starts
-#     E0 = Etot[ipnt,:,:,0]
-#     maxE = np.max([np.max(Etot[ipnt,:,:,i] - E0) for i in range(nt)])
-#     base, exp = getBaseFloat(maxE)
-#     base = round(base + 0.5)
-#     ymax = base * 10**exp
-
-#     E0 = E0[:,:,None]
-#     avgE = np.average(Etot[ipnt,:,:,:] - E0)
-#     for ts0 in range(nt):
-#         if np.max(Etot[ipnt,0:10,0:10,ts0] - E0[0:10,0:10,:]) > avgE / 200: break
-#     timestep0 = ts0
-#     maxEnt = np.max([np.max(enEnt[ipnt,10:20,10:20,i]) for i in range(nt)])
-#     maxDiv = np.max([np.max(enDiv[ipnt,10:20,10:20,i]) for i in range(nt)])
-#     maxAlfx = np.max([np.max(enAlfx[ipnt,10:20,10:20,i]) for i in range(nt)])
-#     maxAlfy = np.max([np.max(enAlfy[ipnt,10:20,10:20,i]) for i in range(nt)])
-#     maxAlfz = np.max([np.max(enAlfz[ipnt,10:20,10:20,i]) for i in range(nt)])
-#     maxSlox = np.max([np.max(enSlox[ipnt,10:20,10:20,i]) for i in range(nt)])
-#     maxSloy = np.max([np.max(enSloy[ipnt,10:20,10:20,i]) for i in range(nt)])
-#     maxSloz = np.max([np.max(enSloz[ipnt,10:20,10:20,i]) for i in range(nt)])
-#     maxFasx = np.max([np.max(enFasx[ipnt,10:20,10:20,i]) for i in range(nt)])
-#     maxFasy = np.max([np.max(enFasy[ipnt,10:20,10:20,i]) for i in range(nt)])
-#     maxFasz = np.max([np.max(enFasz[ipnt,10:20,10:20,i]) for i in range(nt)])
-#     maxE   = np.max([maxEnt, maxDiv, maxAlfx, maxSlox, maxFasx,maxAlfy, maxSloy, maxFasy,maxAlfz, maxSloz, maxFasz])
-#     base, exp = getBaseFloat(maxE)
-#     base  = round(base + 0.5)
-#     ymax1 = base * 10**exp
-
-#     hdf = h5py.File(outfilename1[ipnt], "a")
-#     hdf.attrs['ymax']      = ymax
-#     hdf.attrs['timestep0'] = timestep0
 
 def get_slice_1d(axis, nq1, nq2, xc,yc,zc, localOutpath):
     if len(nq1) <= len(nq2):

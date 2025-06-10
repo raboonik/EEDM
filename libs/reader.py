@@ -1,13 +1,17 @@
 from libs import prerequisites as pre
 
 '''
-    Reader of simulation data files.
-    
     Author: Axel Raboonik
     Email : raboonik@gmail.com
     
-    A class to read simulation data files. When initialized, it first reads all the metadata and stores it in memory.
-    A further call to "data" is then needed to read the MHD data depending on the simulation code and data format.
+    Github: https://github.com/raboonik
+    
+    Article: https://iopscience.iop.org/article/10.3847/1538-4357/adc917
+    
+    Description: A class to read simulation data files. When initialized, 
+                 it first reads all the metadata and stores it in memory.
+                 A further call to "data" is then needed to read the MHD 
+                 data depending on the simulation code and data format.
 '''
 
 class EEDM_reader:
