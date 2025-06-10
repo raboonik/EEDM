@@ -3,7 +3,7 @@ from libs import prerequisites as pre
 '''
     Reader of simulation data files.
     
-    Author: Abbas Raboonik
+    Author: Axel Raboonik
     Email : raboonik@gmail.com
     
     A class to read simulation data files. When initialized, it first reads all the metadata and stores it in memory.

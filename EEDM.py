@@ -33,49 +33,6 @@
         ├── main.py
         ├── settings.py
         └── SI_constants.py
-    
-    Input: snapshots.sdf
-    
-    Output1 (Eq6 of Paper III): 
-        Processed HDF5 files containing the eigenenergy time derivatives (EEDM_<snapshot name>.h5):   
-            {'Divx', 'Divy', 'Divz', 'Entx', 'Enty', 'Entz',
-             'alf_x_1', 'alf_x_2', 'alf_y_1', 'alf_y_2', 'alf_z_1', 'alf_z_2',
-             'slo_x_1', 'slo_x_2', 'slo_y_1', 'slo_y_2', 'slo_z_1', 'slo_z_2',
-             'fas_x_1', 'fas_x_2', 'fas_y_1', 'fas_y_2', 'fas_z_1', 'fas_z_2'}
-             
-             • Here 1 means the - and 2 means the + characteristic directions
-             
-        Energy HDF5 files (Etot_<snapshot name>.h5):
-            {'Kin', 'Mag', 'Int', 'Grv'}
-            
-            • The first energy file also stores all the grid information and metadata!
-        
-        Characteristic speed HDF5 files (Speed_<snapshot name>.h5):
-            {'ax', 'ay', 'az', 'cfx', 'cfy', 'cfz', 'csx', 'csy', 'csz'}
-        
-    Output2 (Eq9 of Paper III; at specific 2D slabs):
-        Processed 2D HDF5 files cut at specified points containing everything:
-            
-            Eigenenergies:
-            {'Divx', 'Divy', 'Divz', 'Entx', 'Enty', 'Entz',
-             'alf_x_1', 'alf_x_2', 'alf_y_1', 'alf_y_2', 'alf_z_1', 'alf_z_2',
-             'slo_x_1', 'slo_x_2', 'slo_y_1', 'slo_y_2', 'slo_z_1', 'slo_z_2',
-             'fas_x_1', 'fas_x_2', 'fas_y_1', 'fas_y_2', 'fas_z_1', 'fas_z_2'}
-             
-            Eigenenergy time derivatives:
-            {'DDTDivx', 'DDTDivy', 'DDTDivz', 'DDTEntx', 'DDTEnty', 'DDTEntz',
-             'DDTalf_x_1', 'DDTalf_x_2', 'DDTalf_y_1', 'DDTalf_y_2', 'DDTalf_z_1', 'DDTalf_z_2',
-             'DDTslo_x_1', 'DDTslo_x_2', 'DDTslo_y_1', 'DDTslo_y_2', 'DDTslo_z_1', 'DDTslo_z_2',
-             'DDTfas_x_1', 'DDTfas_x_2', 'DDTfas_y_1', 'DDTfas_y_2', 'DDTfas_z_1', 'DDTfas_z_2'}
-             
-            Characteristic speeds:
-            {'ax', 'ay', 'az', 'cfx', 'cfy', 'cfz', 'csx', 'csy', 'csz'}
-            
-            Cell-center grid information:
-            {'xc', 'yc', 'zc'}
-            
-            Time:
-            {'time', 'timesteps'}
 '''
 
 #◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
