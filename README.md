@@ -1,5 +1,5 @@
 # Eigenenergy Decomposition Method (EEDM)
-EEDM is an exact 3D method of breaking down the total energy density associated with compound nonlinear gravitational ideal-MHD disturbances into the energy contributions carried by each eigenmode. For more details, see [Paper 1](https://arxiv.org/abs/2502.16010), [Paper 2](https://iopscience.iop.org/article/10.3847/1538-4357/ad8dc8/meta) , and [Paper 3](https://iopscience.iop.org/article/10.3847/1538-4357/ad3bb6). 
+EEDM is an exact 3D method of breaking down the total energy density associated with compound nonlinear gravitational ideal-MHD disturbances into the energy contributions carried by each eigenmode. For more details, see [Paper 1](https://iopscience.iop.org/article/10.3847/1538-4357/ad3bb6/meta), [Paper 2](https://iopscience.iop.org/article/10.3847/1538-4357/ad8dc8/meta) , and [Paper 3](https://iopscience.iop.org/article/10.3847/1538-4357/ad3bb6). 
 
 # Author information
 Axel Raboonik
