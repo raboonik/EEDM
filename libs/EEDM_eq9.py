@@ -38,6 +38,7 @@ filenames = [fid1[i].replace(EEDMDataPath, '') for i in range(len(fid1))]
 nt = len(fidEn)
 
 if rank == mainrank and (nt == 0 or len(fidSp) == 0 or len(fid1) == 0): raise ValueError("No EEDM snapshots found in "+EEDMDataPath)
+
 comm.barrier()
 
 dat      = pre.h5.File(fidEn[0],'r') 
@@ -104,31 +105,32 @@ print("rank, myshape, mynq1i, mynq1f, mynq2i, mynq2f, mynq3i, mynq3f = ", rank, 
 myDDTenDivx  = np.zeros(myshape)
 myDDTenDivy  = np.zeros(myshape)
 myDDTenDivz  = np.zeros(myshape)
-if divBCond: myDDTenDiv1 = np.zeros(myshape)
 myDDTenEntx  = np.zeros(myshape)
 myDDTenEnty  = np.zeros(myshape)
 myDDTenEntz  = np.zeros(myshape)
-myDDTenGra  = np.zeros(myshape)
-myDDTenAlfx = np.zeros(myshape)
-myDDTenSlox = np.zeros(myshape)
-myDDTenFasx = np.zeros(myshape)
-myDDTenAlfy = np.zeros(myshape)
-myDDTenSloy = np.zeros(myshape)
-myDDTenFasy = np.zeros(myshape)
-myDDTenAlfz = np.zeros(myshape)
-myDDTenSloz = np.zeros(myshape)
-myDDTenFasz = np.zeros(myshape)
-myax        = np.zeros(myshape)
-myay        = np.zeros(myshape)
-myaz        = np.zeros(myshape)
-mycsx       = np.zeros(myshape)
-mycsy       = np.zeros(myshape)
-mycsz       = np.zeros(myshape)
-mycfx       = np.zeros(myshape)
-mycfy       = np.zeros(myshape)
-mycfz       = np.zeros(myshape)
-mycs        = np.zeros(myshape)
-myEtot      = np.zeros(myshape)
+myDDTenGra   = np.zeros(myshape)
+myDDTenAlfx  = np.zeros(myshape)
+myDDTenSlox  = np.zeros(myshape)
+myDDTenFasx  = np.zeros(myshape)
+myDDTenAlfy  = np.zeros(myshape)
+myDDTenSloy  = np.zeros(myshape)
+myDDTenFasy  = np.zeros(myshape)
+myDDTenAlfz  = np.zeros(myshape)
+myDDTenSloz  = np.zeros(myshape)
+myDDTenFasz  = np.zeros(myshape)
+myax         = np.zeros(myshape)
+myay         = np.zeros(myshape)
+myaz         = np.zeros(myshape)
+mycsx        = np.zeros(myshape)
+mycsy        = np.zeros(myshape)
+mycsz        = np.zeros(myshape)
+mycfx        = np.zeros(myshape)
+mycfy        = np.zeros(myshape)
+mycfz        = np.zeros(myshape)
+mycs         = np.zeros(myshape)
+myEtot       = np.zeros(myshape)
+
+if divBCond: myDDTenDiv1 = np.zeros(myshape)
 
 if pre.mode == "XYZUpDownSeparated":
     myDDTenAlfx_2 = np.zeros(myshape)
@@ -273,7 +275,12 @@ if rank == mainrank:
         hdf.create_dataset('az'          ,   data=np.array(az[ipnt,:,:,:] , dtype='float64'), compression='gzip', compression_opts=9)
         hdf.close()
 
-del(myax,myay,myaz,ax,ay,az)
+del(myax,
+    myay,
+    myaz,
+    ax  ,
+    ay  ,
+    az)
 
 csx = pre.APP.gather_array_ND(comm, rank, mainrank, domDecompND, mycsx)
 csy = pre.APP.gather_array_ND(comm, rank, mainrank, domDecompND, mycsy)
@@ -295,7 +302,21 @@ if rank == mainrank:
         hdf.create_dataset('cfz',         data=np.array(cfz[ipnt,:,:,:], dtype='float64'), compression='gzip', compression_opts=9)
         hdf.create_dataset('cs' ,         data=np.array(cs[ipnt,:,:,:] , dtype='float64'), compression='gzip', compression_opts=9)
         hdf.close()
-del(mycsx,mycsy,mycsz,mycfx,mycfy,mycfz,mycs,csy,csz,cfx,cfy,cfz,cs,csx)
+
+del(mycsx,
+    mycsy,
+    mycsz,
+    mycfx,
+    mycfy,
+    mycfz,
+    mycs ,
+    csy  ,
+    csz  ,
+    cfx  ,
+    cfy  ,
+    cfz  ,
+    cs   ,
+    csx)
 
 if rank == mainrank: print("Writing velocity components to file done!\n")
 
@@ -482,7 +503,8 @@ for ipnt in range(myshape[0]):
                 myenFasz_2[ipnt,k1,k2,:]   = pre.spy.integrate.cumtrapz(dat,time,axis=0,initial=0)
                 
 mask,dat = 0,0
-del(mask,dat)
+del(mask,
+    dat)
 
 
 if rank == mainrank: print("Gathering the rate of energy change components...\n")
@@ -512,15 +534,30 @@ if rank == mainrank:
             hdf.create_dataset('eq6_m9_z'  ,data=np.array(DDTenGra[ipnt,:,:,:]   , dtype='float64'), compression='gzip', compression_opts=9)
         hdf.close()
 
-del(myDDTenEntx,myDDTenAlfx,DDTenAlfx,myDDTenDivx)
-if pre.mode == "XYZUpDownSeparated": del(myDDTenAlfx_2,DDTenAlfx_2,DDTenEntx,DDTenDivx)
-if divBCond:                         del(myDDTenDiv1,DDTenDiv1)
-if g > 0:                            del(myDDTenGra,DDTenGra)
+del(myDDTenEntx,
+    myDDTenAlfx,
+    DDTenAlfx  ,
+    myDDTenDivx)
+
+if pre.mode == "XYZUpDownSeparated": 
+    del(myDDTenAlfx_2,
+        DDTenAlfx_2  ,
+        DDTenEntx    ,
+        DDTenDivx)
+
+if divBCond:                         
+    del(myDDTenDiv1,
+        DDTenDiv1)
+
+if g > 0:                            
+    del(myDDTenGra,
+        DDTenGra)
 
 DDTenDivy   = pre.APP.gather_array_ND(comm, rank, mainrank, domDecompND, myDDTenDivy)
 DDTenDivz   = pre.APP.gather_array_ND(comm, rank, mainrank, domDecompND, myDDTenDivz)
 DDTenEnty   = pre.APP.gather_array_ND(comm, rank, mainrank, domDecompND, myDDTenEnty)
 DDTenEntz   = pre.APP.gather_array_ND(comm, rank, mainrank, domDecompND, myDDTenEntz)
+
 if rank == mainrank:
     print("eq6_m1_y,eq6_m1_z,eq6_m2_y,eq6_m2_z gatehred, starting to write to file!\n")
     for ipnt in range(lenq):
@@ -531,7 +568,14 @@ if rank == mainrank:
         hdf.create_dataset('eq6_m2_z', data=np.array(DDTenEntz[ipnt,:,:,:], dtype='float64'), compression='gzip', compression_opts=9)
         hdf.close()
 
-del(DDTenDivy,DDTenDivz,DDTenEnty,DDTenEntz,myDDTenDivy,myDDTenDivz,myDDTenEnty,myDDTenEntz)
+del(DDTenDivy  ,
+    DDTenDivz  ,
+    DDTenEnty  ,
+    DDTenEntz  ,
+    myDDTenDivy,
+    myDDTenDivz,
+    myDDTenEnty,
+    myDDTenEntz)
 
 DDTenSlox   = pre.APP.gather_array_ND(comm, rank, mainrank, domDecompND, myDDTenSlox)
 DDTenFasx   = pre.APP.gather_array_ND(comm, rank, mainrank, domDecompND, myDDTenFasx)
@@ -555,8 +599,20 @@ if rank == mainrank:
             hdf.create_dataset('eq6_m4_y', data=np.array(DDTenAlfy_2[ipnt,:,:,:], dtype='float64'), compression='gzip', compression_opts=9)
         hdf.close()
 
-del(DDTenSlox,DDTenFasx,DDTenAlfy,myDDTenSlox,myDDTenFasx,myDDTenAlfy)
-if pre.mode == "XYZUpDownSeparated":del(DDTenSlox_2,DDTenFasx_2,DDTenAlfy_2,myDDTenSlox_2,myDDTenFasx_2,myDDTenAlfy_2)
+del(DDTenSlox  ,
+    DDTenFasx  ,
+    DDTenAlfy  ,
+    myDDTenSlox,
+    myDDTenFasx,
+    myDDTenAlfy)
+
+if pre.mode == "XYZUpDownSeparated":
+    del(DDTenSlox_2  ,
+        DDTenFasx_2  ,
+        DDTenAlfy_2  ,
+        myDDTenSlox_2,
+        myDDTenFasx_2,
+        myDDTenAlfy_2)
 
 DDTenSloy   = pre.APP.gather_array_ND(comm, rank, mainrank, domDecompND, myDDTenSloy)
 DDTenFasy   = pre.APP.gather_array_ND(comm, rank, mainrank, domDecompND, myDDTenFasy)
@@ -580,8 +636,20 @@ if rank == mainrank:
             hdf.create_dataset('eq6_m4_z', data=np.array(DDTenAlfz_2[ipnt,:,:,:], dtype='float64'), compression='gzip', compression_opts=9)
         hdf.close()
 
-del(DDTenSloy,DDTenFasy,DDTenAlfz,myDDTenSloy,myDDTenFasy,myDDTenAlfz)
-if pre.mode == "XYZUpDownSeparated":del(DDTenSloy_2,DDTenFasy_2,DDTenAlfz_2,myDDTenSloy_2,myDDTenFasy_2,myDDTenAlfz_2)
+del(DDTenSloy  ,
+    DDTenFasy  ,
+    DDTenAlfz  ,
+    myDDTenSloy,
+    myDDTenFasy,
+    myDDTenAlfz)
+
+if pre.mode == "XYZUpDownSeparated":
+    del(DDTenSloy_2  ,
+        DDTenFasy_2  ,
+        DDTenAlfz_2  ,
+        myDDTenSloy_2,
+        myDDTenFasy_2,
+        myDDTenAlfz_2)
 
 DDTenSloz   = pre.APP.gather_array_ND(comm, rank, mainrank, domDecompND, myDDTenSloz)
 DDTenFasz   = pre.APP.gather_array_ND(comm, rank, mainrank, domDecompND, myDDTenFasz)
@@ -601,8 +669,17 @@ if rank == mainrank:
             hdf.create_dataset('eq6_m8_z', data=np.array(DDTenFasz_2[ipnt,:,:,:], dtype='float64'), compression='gzip', compression_opts=9)
         hdf.close()
 
-del(DDTenSloz,DDTenFasz,myDDTenSloz,myDDTenFasz)
-if pre.mode == "XYZUpDownSeparated":del(DDTenSloz_2,DDTenFasz_2,myDDTenSloz_2,myDDTenFasz_2)
+del(DDTenSloz  ,
+    DDTenFasz  ,
+    myDDTenSloz,
+    myDDTenFasz)
+
+if pre.mode == "XYZUpDownSeparated":
+    del(DDTenSloz_2  ,
+        DDTenFasz_2  ,
+        myDDTenSloz_2,
+        myDDTenFasz_2)
+    
 if rank == mainrank: print("Writing the rate of energy change components to file done!\n")
 
 
@@ -629,9 +706,20 @@ if rank == mainrank:
             hdf.create_dataset('eq9_m9_z'  , data=np.array(enGra[ipnt,:,:,:] , dtype='float64'), compression='gzip', compression_opts=9)
         hdf.close()
 
-del(myEtot,myenEntx,myenDivx)
-if divBCond: del(myenDiv1,enDiv1,enDivx,enEntx, Etot)
-if g > 0: del(myenGra,enGra)
+del(myEtot  ,
+    myenEntx,
+    myenDivx)
+
+if divBCond: 
+    del(myenDiv1,
+        enDiv1  ,
+        enDivx  ,
+        enEntx  , 
+        Etot)
+
+if g > 0: 
+    del(myenGra,
+        enGra)
 
 enDivy      = pre.APP.gather_array_ND(comm, rank, mainrank, domDecompND, myenDivy   ) 
 enDivz      = pre.APP.gather_array_ND(comm, rank, mainrank, domDecompND, myenDivz   ) 
@@ -648,7 +736,14 @@ if rank == mainrank:
         hdf.create_dataset('eq9_m2_z', data=np.array(enEntz[ipnt,:,:,:], dtype='float64'), compression='gzip', compression_opts=9)
         hdf.close()
 
-del(enDivy,enDivz,enEnty,enEntz,myenDivy,myenDivz,myenEnty,myenEntz)
+del(enDivy  ,
+    enDivz  ,
+    enEnty  ,
+    enEntz  ,
+    myenDivy,
+    myenDivz,
+    myenEnty,
+    myenEntz)
 
 enAlfx      = pre.APP.gather_array_ND(comm, rank, mainrank, domDecompND, myenAlfx   ) 
 enAlfy      = pre.APP.gather_array_ND(comm, rank, mainrank, domDecompND, myenAlfy   ) 
@@ -672,8 +767,20 @@ if rank == mainrank:
             hdf.create_dataset('eq9_m4_z', data=np.array(enAlfz_2[ipnt,:,:,:], dtype='float64'), compression='gzip', compression_opts=9)
         hdf.close()
 
-del(enAlfx,myenAlfx,enAlfy,myenAlfy,enAlfz,myenAlfz)
-if pre.mode == "XYZUpDownSeparated":del(enAlfx_2,myenAlfx_2,enAlfy_2,myenAlfy_2,enAlfz_2,myenAlfz_2)
+del(enAlfx  ,
+    myenAlfx,
+    enAlfy  ,
+    myenAlfy,
+    enAlfz  ,
+    myenAlfz)
+
+if pre.mode == "XYZUpDownSeparated":
+    del(enAlfx_2  ,
+        myenAlfx_2,
+        enAlfy_2  ,
+        myenAlfy_2,
+        enAlfz_2  ,
+        myenAlfz_2)
 
 enSlox      = pre.APP.gather_array_ND(comm, rank, mainrank, domDecompND, myenSlox   ) 
 enSloy      = pre.APP.gather_array_ND(comm, rank, mainrank, domDecompND, myenSloy   ) 
@@ -697,9 +804,20 @@ if rank == mainrank:
             hdf.create_dataset('eq9_m6_z', data=np.array(enSloz_2[ipnt,:,:,:], dtype='float64'), compression='gzip', compression_opts=9)
         hdf.close()
 
-del(myenSlox,myenSloy,myenSloz,enSlox,enSloy,enSloz)
+del(myenSlox,
+    myenSloy,
+    myenSloz,
+    enSlox  ,
+    enSloy  ,
+    enSloz)
+
 if pre.mode == "XYZUpDownSeparated":
-    del(myenSlox_2,myenSloy_2,myenSloz_2,enSlox_2,enSloy_2,enSloz_2)
+    del(myenSlox_2,
+        myenSloy_2,
+        myenSloz_2,
+        enSlox_2  ,
+        enSloy_2  ,
+        enSloz_2)
 
 
 enFasx      = pre.APP.gather_array_ND(comm, rank, mainrank, domDecompND, myenFasx   ) 
@@ -724,9 +842,23 @@ if rank == mainrank:
             hdf.create_dataset('eq9_m8_z', data=np.array(enFasz_2[ipnt,:,:,:], dtype='float64'), compression='gzip', compression_opts=9)
         hdf.close()
 
-del(enFasx,myenFasx,enFasy,myenFasy,enFasz,myenFasz)
-if pre.mode == "XYZUpDownSeparated":del(enFasx_2,myenFasx_2,enFasy_2,myenFasy_2,enFasz_2,myenFasz_2)
+del(enFasx  ,
+    myenFasx,
+    enFasy  ,
+    myenFasy,
+    enFasz  ,
+    myenFasz)
+
+if pre.mode == "XYZUpDownSeparated":
+    del(enFasx_2  ,
+        myenFasx_2,
+        enFasy_2  ,
+        myenFasy_2,
+        enFasz_2  ,
+        myenFasz_2)
 
 
 comm.barrier()
-if rank == mainrank: print("\nDone!")
+
+if rank == mainrank:
+    print("\nEquation 9 computed and saved in " + localOutpath + ".")

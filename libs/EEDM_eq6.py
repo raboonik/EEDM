@@ -112,7 +112,9 @@ for i in range(slt,elt):
     print("rank = ", rank, " Memory used before computing the characteristic speeds = ", mem, " Gb")
     
     # No longer need B
-    del(bx,by,bz)
+    del(bx,
+        by,
+        bz)
     
     # Save maxDivB
     divB                         = BxDx + ByDy + BzDz
@@ -190,7 +192,9 @@ for i in range(slt,elt):
     
     # Update the used memory
     mem  = mem - (sys.getsizeof(BxDx)+sys.getsizeof(ByDy)+sys.getsizeof(BzDz)) / 1024**3
-    del(BxDx, ByDy,BzDz)
+    del(BxDx, 
+        ByDy,
+        BzDz)
     
     #**********************************************************************************************************
     # Save the divB eigenenergy time derivatives
@@ -205,7 +209,10 @@ for i in range(slt,elt):
     
     # Save the time
     hdfnew.attrs['time'] = time
-    del(divx,divy,divz)
+    
+    del(divx,
+        divy,
+        divz)
     
     
     # Ent and gravity PA modes: m = 2 and 9: currently the code can only handle constant gravity along -z 
@@ -242,7 +249,10 @@ for i in range(slt,elt):
     hdfnew.create_dataset('m2_x', data=np.array(Entx,dtype='float64'), compression='gzip', compression_opts=9)
     hdfnew.create_dataset('m2_y', data=np.array(Enty,dtype='float64'), compression='gzip', compression_opts=9)
     hdfnew.create_dataset('m2_z', data=np.array(Entz,dtype='float64'), compression='gzip', compression_opts=9)
-    del(Entx,Enty,Entz)
+    
+    del(Entx,
+        Enty,
+        Entz)
     
     # IMPORTANT: We want to check whether different parts of the domain contain a wave-field or not
     # This will help identify possible nans in the outputs
@@ -341,7 +351,8 @@ for i in range(slt,elt):
     elif pre.mode == "UpDownCombined":
         hdfnew.create_dataset('m5and6_x', data=np.array(slowx1 + slowx2,dtype='float64'), compression='gzip', compression_opts=9)
     
-    del(slowx1, slowx2)
+    del(slowx1, 
+        slowx2)
     
     
     # Fastx (m = 7 and 8)
@@ -362,11 +373,10 @@ for i in range(slt,elt):
         
         fastx2 = fastx2 + (-0.5*(g*(cfx + vx)*readObj.zc*alphafx*(ay*ByDx*c*alphasx*rho + az*BzDx*c*alphasx*rho + np.sqrt(ay**2 + az**2)*pDx*alphafx*sqmurho + 
                  np.sqrt(ay**2 + az**2)*cfx*vxDx*alphafx*rho*sqmurho - csx*(ay*vyDx + az*vzDx)*alphasx*rho*sqmurho*sx))/(np.sqrt(ay**2 + az**2)*c**2*sqmurho))
-        
     
-    del(sx)
-    del(alphasx)
-    del(alphafx)
+    del(alphasx,
+        alphafx,
+        sx)
     
     if waveCond: 
         fastx1[maskWaveField] = 0.
@@ -378,7 +388,8 @@ for i in range(slt,elt):
     elif pre.mode == "UpDownCombined":
         hdfnew.create_dataset('m7and8_x', data=np.array(fastx1 + fastx2,dtype='float64'), compression='gzip', compression_opts=9)
     
-    del(fastx1, fastx2)
+    del(fastx1, 
+        fastx2)
     
     # If the allocated memory can handle the program up to this point then the rest will be fine
     mem = mem - sys.getsizeof(pDx) / 1024**3
@@ -448,7 +459,8 @@ for i in range(slt,elt):
     elif pre.mode == "UpDownCombined":
         hdfnew.create_dataset('m5and6_y', data=np.array(slowy1 + slowy2,dtype='float64'), compression='gzip', compression_opts=9)
     
-    del(slowy1, slowy2)
+    del(slowy1, 
+        slowy2)
 
     # Fasty
     fasty1 = (((cfy - vy)*(cfy*vy*alphafy - ((vx**2 + vy**2 + vz**2)*alphafy)/2. - np.sqrt(ax**2 + az**2)*c*alphasy - (c**2*alphafy)/(-1 + gamma) - 
@@ -469,9 +481,9 @@ for i in range(slt,elt):
         fasty2 = fasty2 + (-0.5*(g*(cfy + vy)*readObj.zc*alphafy*(ax*BxDy*c*alphasy*rho + az*BzDy*c*alphasy*rho + np.sqrt(ax**2 + az**2)*pDy*alphafy*sqmurho + 
                  np.sqrt(ax**2 + az**2)*cfy*vyDy*alphafy*rho*sqmurho - csy*(ax*vxDy + az*vzDy)*alphasy*rho*sqmurho*sy))/(np.sqrt(ax**2 + az**2)*c**2*sqmurho))
     
-    del(sy)
-    del(alphasy)
-    del(alphafy)
+    del(alphasy,
+        alphafy,
+        sy)
     
     if waveCond: 
         fasty1[maskWaveField] = 0.
@@ -483,7 +495,8 @@ for i in range(slt,elt):
     elif pre.mode == "UpDownCombined":
         hdfnew.create_dataset('m7and8_y', data=np.array(fasty1 + fasty2,dtype='float64'), compression='gzip', compression_opts=9)
     
-    del(fasty1, fasty2)
+    del(fasty1, 
+        fasty2)
     
     
     alphasz = (cfz**2 - c**2)/(cfz**2 - csz**2)
@@ -549,8 +562,8 @@ for i in range(slt,elt):
     elif pre.mode == "UpDownCombined":
         hdfnew.create_dataset('m5and6_z', data=np.array(slowz1 + slowz2,dtype='float64'), compression='gzip', compression_opts=9)
     
-    del(slowz1, slowz2)
-    
+    del(slowz1, 
+        slowz2)
     
     # Fastz
     fastz1 = (((cfz - vz)*(cfz*vz*alphafz - ((vx**2 + vy**2 + vz**2)*alphafz)/2. - np.sqrt(ax**2 + ay**2)*c*alphasz - (c**2*alphafz)/(-1 + gamma)            - 
@@ -571,11 +584,11 @@ for i in range(slt,elt):
         fastz2 = fastz2 + (-0.5*(g*(cfz + vz)*readObj.zc*alphafz*(ax*BxDz*c*alphasz*rho + ay*ByDz*c*alphasz*rho + np.sqrt(ax**2 + ay**2)*pDz*alphafz*sqmurho + 
                  np.sqrt(ax**2 + ay**2)*cfz*vzDz*alphafz*rho*sqmurho - csz*(ax*vxDz + ay*vyDz)*alphasz*rho*sqmurho*sz))/(np.sqrt(ax**2 + ay**2)*c**2*sqmurho))
     
-    del(sz)
-    del(alphasz)
-    del(alphafz)
-    
-    del(pDz,rhoDz)
+    del(pDz    ,
+        rhoDz  ,
+        sz     ,
+        alphasz,
+        alphafz)
     
     if waveCond: 
         fastz1[maskWaveField] = 0.
@@ -587,10 +600,38 @@ for i in range(slt,elt):
     elif pre.mode == "UpDownCombined":
         hdfnew.create_dataset('m7and8_z', data=np.array(fastz1 + fastz2,dtype='float64'), compression='gzip', compression_opts=9)
     
-    del(fastz1, fastz2)
+    del(fastz1, 
+        fastz2)
     
     hdfnew.close()
     
-    del(sqmurho, vxDx,vxDy,vxDz,vyDx,vyDy,vyDz,vzDx,vzDy,vzDz,BxDy,BxDz,ByDx,ByDz,BzDx,BzDy,maskWaveField)
-    del(ax,ay,az,csx,cfx,csy,cfy,csz,cfz)
-    print("rank = ", rank, filename, " done!")
+    # Free up the memory
+    del(sqmurho, 
+        vxDx   ,
+        vxDy   ,
+        vxDz   ,
+        vyDx   ,
+        vyDy   ,
+        vyDz   ,
+        vzDx   ,
+        vzDy   ,
+        vzDz   ,
+        BxDy   ,
+        BxDz   ,
+        ByDx   ,
+        ByDz   ,
+        BzDx   ,
+        BzDy   ,
+        ax     ,
+        ay     ,
+        az     ,
+        csx    ,
+        cfx    ,
+        csy    ,
+        cfy    ,
+        csz    ,
+        cfz    ,
+        maskWaveField)
+
+if rank == mainrank:
+    print("Equations 6 computed and saved in " + outDirec + ".")
