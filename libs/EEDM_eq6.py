@@ -37,7 +37,7 @@ filenames = [readObj.feed[i].replace(pre.datapath, '') for i in range(slt,elt)]
 # Compute the eigenenergy time derivatives (Equations 6 of Paper III)
 for i in range(slt,elt):
     filename                       = filenames[i - slt]
-    rho, p, vx, vy, vz, bx, by, bz = readObj.data(i)
+    rho, vx, vy, vz, bx, by, bz, p = readObj.data(i)
     time                           = readObj.time
     
     print("rank = ", rank, " Reading", filename)
@@ -47,11 +47,12 @@ for i in range(slt,elt):
     
     # Save the kinetic, magnetic, internal, and gravitational energies
     hdfEtot =  pre.h5.File(outDirec + "Etot_" + filename[0:-4] + ".h5", 'w')
-    hdfEtot.create_dataset('Kin', data=np.array(0.5 * rho * vsq,dtype='float64')                        , compression='gzip', compression_opts=9) 
-    hdfEtot.create_dataset('Mag', data=np.array(0.5 * (bx**2 + by**2 + bz**2) / pre.mu0,dtype='float64'), compression='gzip', compression_opts=9) 
-    hdfEtot.create_dataset('Int', data=np.array(p / (gamma - 1),dtype='float64')                        , compression='gzip', compression_opts=9) 
+    
+    hdfEtot.create_dataset('Kin', data=np.array(0.5 * rho * vsq                        , dtype='float64'), compression='gzip', compression_opts=9) 
+    hdfEtot.create_dataset('Mag', data=np.array(0.5 * (bx**2 + by**2 + bz**2) / pre.mu0, dtype='float64'), compression='gzip', compression_opts=9) 
+    hdfEtot.create_dataset('Int', data=np.array(p / (gamma - 1)                        , dtype='float64'), compression='gzip', compression_opts=9) 
     if g == 0:
-        hdfEtot.create_dataset('Grv', data=np.array([0] ,dtype='float64')                , compression='gzip', compression_opts=9) 
+        hdfEtot.create_dataset('Grv', data=np.array([0]                 ,dtype='float64'), compression='gzip', compression_opts=9) 
     else:
         hdfEtot.create_dataset('Grv', data=np.array(rho * g * readObj.zc,dtype='float64'), compression='gzip', compression_opts=9) 
     
@@ -69,16 +70,16 @@ for i in range(slt,elt):
         
         hdfEtot.attrs['pre.mode'] = pre.pre.mode
         hdfEtot.attrs['divBCond'] = pre.divBCond
-        hdfEtot.attrs['gamma']    = gamma
+        hdfEtot.attrs['gamma'   ] = gamma
     
     # Compute the sound speed
     c   = np.sqrt(gamma * p / rho)
     
     # Compute and save the polytropic k, where dk/dt|_Lagrangian = 0
     poly_k                          = p / rho**gamma
-    hdfEtot.attrs['maxAbsEntropy']  = np.max(np.abs(poly_k))
+    hdfEtot.attrs['maxAbsEntropy' ] = np.max( np.abs(poly_k))
     hdfEtot.attrs['meanAbsEntropy'] = np.mean(np.abs(poly_k))
-    hdfEtot.attrs['stdAbsEntropy']  = np.std(np.abs(poly_k))
+    hdfEtot.attrs['stdAbsEntropy' ] = np.std( np.abs(poly_k))
     del(poly_k)
     
     # Let's roughly keep track of how much memory we're using
@@ -119,9 +120,9 @@ for i in range(slt,elt):
     
     # Save maxDivB
     divB                         = BxDx + ByDy + BzDz
-    hdfEtot.attrs['maxAbsDivB']  = np.max(np.abs(divB))
+    hdfEtot.attrs['maxAbsDivB' ] = np.max(np.abs(divB))
     hdfEtot.attrs['meanAbsDivB'] = np.mean(np.abs(divB))
-    hdfEtot.attrs['stdAbsDivB']  = np.std(np.abs(divB))
+    hdfEtot.attrs['stdAbsDivB' ] = np.std(np.abs(divB))
     hdfEtot.close()
     del(divB)
     
@@ -170,11 +171,13 @@ for i in range(slt,elt):
     #**********************************************************************************************************
     # Save the characteristic speeds
     hdfVel = pre.h5.File(outDirec + "Speed_" + filename[0:-4] + ".h5", 'w')
+    
     hdfVel.attrs['gCond']           = False
     if g > 0: hdfVel.attrs['gCond'] = True
-    hdfVel.create_dataset('ax' , data=np.array(ax,dtype='float64' ), compression='gzip', compression_opts=9)
-    hdfVel.create_dataset('ay' , data=np.array(ay,dtype='float64' ), compression='gzip', compression_opts=9)
-    hdfVel.create_dataset('az' , data=np.array(az,dtype='float64' ), compression='gzip', compression_opts=9)
+    
+    hdfVel.create_dataset('ax' , data=np.array(ax ,dtype='float64'), compression='gzip', compression_opts=9)
+    hdfVel.create_dataset('ay' , data=np.array(ay ,dtype='float64'), compression='gzip', compression_opts=9)
+    hdfVel.create_dataset('az' , data=np.array(az ,dtype='float64'), compression='gzip', compression_opts=9)
     hdfVel.create_dataset('csx', data=np.array(csx,dtype='float64'), compression='gzip', compression_opts=9)
     hdfVel.create_dataset('csy', data=np.array(csy,dtype='float64'), compression='gzip', compression_opts=9)
     hdfVel.create_dataset('csz', data=np.array(csz,dtype='float64'), compression='gzip', compression_opts=9)
@@ -200,6 +203,7 @@ for i in range(slt,elt):
     #**********************************************************************************************************
     # Save the divB eigenenergy time derivatives
     hdfnew = pre.h5.File(outDirec+"EigenenergyDDT_"+filename[0:-4]+'.h5', 'w')
+    
     hdfnew.create_dataset('eq6_m1_x', data=np.array(divx,dtype='float64'), compression='gzip', compression_opts=9)
     hdfnew.create_dataset('eq6_m1_y', data=np.array(divy,dtype='float64'), compression='gzip', compression_opts=9)
     hdfnew.create_dataset('eq6_m1_z', data=np.array(divz,dtype='float64'), compression='gzip', compression_opts=9)
@@ -228,7 +232,7 @@ for i in range(slt,elt):
     rhoDz = pre.partial(rho,2,readObj.zc)
     
     # Update the used memory
-    mem = mem + (sys.getsizeof(pDx)   + sys.getsizeof(pDy)     + sys.getsizeof(pDz) +
+    mem = mem + (sys.getsizeof(pDx)   + sys.getsizeof(pDy)   + sys.getsizeof(pDz) +
                  sys.getsizeof(rhoDx) + sys.getsizeof(rhoDy) + sys.getsizeof(rhoDz)) / 1024**3
     print("rank = ", rank, " Memory used after pDq and rhoDq just before Ent = ", mem, " Gb")
     

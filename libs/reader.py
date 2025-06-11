@@ -87,9 +87,9 @@ class EEDM_reader:
                 del(en)
                 
                 # Compute v and B at cell centers
-                vx = pre.lare3dGetCellVals(vx,"v")
-                vy = pre.lare3dGetCellVals(vy,"v")
-                vz = pre.lare3dGetCellVals(vz,"v")
+                vx = pre.lare3dGetCellVals(vx,"v" )
+                vy = pre.lare3dGetCellVals(vy,"v" )
+                vz = pre.lare3dGetCellVals(vz,"v" )
                 bx = pre.lare3dGetCellVals(bx,"bx")
                 by = pre.lare3dGetCellVals(by,"by")
                 bz = pre.lare3dGetCellVals(bz,"bz")
@@ -102,4 +102,4 @@ class EEDM_reader:
             # 2D already handled
             pass
         
-        return rho, p, vx, vy, vz, bx, by, bz
+        return rho, vx, vy, vz, bx, by, bz, p
