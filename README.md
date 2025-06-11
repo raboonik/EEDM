@@ -33,7 +33,7 @@ Make sure the following python3 packages are installed
 &nbsp;&nbsp;&nbsp;&nbsp; mpirun -n [#cores] python3 EEDM.py
 
 # Outputs
-The curent version of the code outputs h5 files containing the eigenenergies (and/or their time derivatives) associated with each of the nine gravitational-ideal-MHD modes in each of the three x, y, and z directions separately. The computations are done according to the Equations 6 and 9 of [Paper 3](https://iopscience.iop.org/article/10.3847/1538-4357/ad3bb6). If g = 0, the code reduces to the non-gravitational ideal-MHD equations of [Paper 2](https://iopscience.iop.org/article/10.3847/1538-4357/ad8dc8/meta). 
+The curent version of the code outputs h5 files containing the eigenenergies (and/or their time derivatives) associated with each of the nine gravitational-ideal-MHD modes in each of the three x, y, and z directions separately. The computations are done according to the Equations 6 and 9 of [Paper 3](https://iopscience.iop.org/article/10.3847/1538-4357/adc917). If g = 0, the code reduces to the non-gravitational ideal-MHD equations of [Paper 2](https://iopscience.iop.org/article/10.3847/1538-4357/ad8dc8/meta). 
 
 The outputs of the eigenenergy time derivatives (Equations 6) and the eigenenergies themselves (Equation 9) are stored in separate directories: 
 
