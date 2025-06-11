@@ -80,3 +80,7 @@ if eq9Cond:
     with open(os.getcwd()+"/libs/EEDM_eq9.py") as f:
         code = f.read()
         exec(code)
+
+comm.barrier()
+
+if rank == mainrank: print("\nAll done!\n")
