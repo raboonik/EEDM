@@ -17,9 +17,13 @@ Make sure the following python3 packages are installed
 
 &nbsp;&nbsp;&nbsp;&nbsp; Numpy
 
+&nbsp;&nbsp;&nbsp;&nbsp; h5py
+
 &nbsp;&nbsp;&nbsp;&nbsp; SciPy 1.10.1 (pip3 install --force-reinstall -v "scipy==1.10.1")
 
 &nbsp;&nbsp;&nbsp;&nbsp; mpi4py
+
+&nbsp;&nbsp;&nbsp;&nbsp; > **Note for LareXd > V3 users:** If you are working with .sdf files, it is assumed that a compatible Python interface for reading this format already exists in your environment.
 
 ## Step 1: Getting the code
 &nbsp;&nbsp;&nbsp;&nbsp; git clone https://github.com/raboonik/EEDM.git   [DestinationDir]
