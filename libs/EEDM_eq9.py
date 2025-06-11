@@ -170,42 +170,42 @@ for i in range(nt):
     stdEntropy[i]  = float(datEn.attrs['stdAbsEntropy' ])
     
     for ipnt in range(mylenq):
-        myDDTenDivx[ ipnt,:,:,i] = np.squeeze(dat["m1_x"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-        myDDTenDivy[ ipnt,:,:,i] = np.squeeze(dat["m1_y"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-        myDDTenDivz[ ipnt,:,:,i] = np.squeeze(dat["m1_z"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-        myDDTenEntx[ ipnt,:,:,i] = np.squeeze(dat["m2_x"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-        myDDTenEnty[ ipnt,:,:,i] = np.squeeze(dat["m2_y"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-        myDDTenEntz[ ipnt,:,:,i] = np.squeeze(dat["m2_z"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-        myDDTenAlfx[ipnt,:,:,i]  = np.squeeze(dat["m3_x"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-        myDDTenSlox[ipnt,:,:,i]  = np.squeeze(dat["m5_x"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-        myDDTenFasx[ipnt,:,:,i]  = np.squeeze(dat["m7_x"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-        myDDTenAlfy[ipnt,:,:,i]  = np.squeeze(dat["m3_y"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-        myDDTenSloy[ipnt,:,:,i]  = np.squeeze(dat["m5_y"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-        myDDTenFasy[ipnt,:,:,i]  = np.squeeze(dat["m7_y"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-        myDDTenAlfz[ipnt,:,:,i]  = np.squeeze(dat["m3_z"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-        myDDTenSloz[ipnt,:,:,i]  = np.squeeze(dat["m5_z"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-        myDDTenFasz[ipnt,:,:,i]  = np.squeeze(dat["m7_z"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
+        myDDTenDivx[ ipnt,:,:,i] = np.squeeze(dat["eq6_m1_x"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
+        myDDTenDivy[ ipnt,:,:,i] = np.squeeze(dat["eq6_m1_y"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
+        myDDTenDivz[ ipnt,:,:,i] = np.squeeze(dat["eq6_m1_z"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
+        myDDTenEntx[ ipnt,:,:,i] = np.squeeze(dat["eq6_m2_x"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
+        myDDTenEnty[ ipnt,:,:,i] = np.squeeze(dat["eq6_m2_y"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
+        myDDTenEntz[ ipnt,:,:,i] = np.squeeze(dat["eq6_m2_z"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
+        myDDTenAlfx[ipnt,:,:,i]  = np.squeeze(dat["eq6_m3_x"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
+        myDDTenSlox[ipnt,:,:,i]  = np.squeeze(dat["eq6_m5_x"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
+        myDDTenFasx[ipnt,:,:,i]  = np.squeeze(dat["eq6_m7_x"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
+        myDDTenAlfy[ipnt,:,:,i]  = np.squeeze(dat["eq6_m3_y"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
+        myDDTenSloy[ipnt,:,:,i]  = np.squeeze(dat["eq6_m5_y"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
+        myDDTenFasy[ipnt,:,:,i]  = np.squeeze(dat["eq6_m7_y"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
+        myDDTenAlfz[ipnt,:,:,i]  = np.squeeze(dat["eq6_m3_z"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
+        myDDTenSloz[ipnt,:,:,i]  = np.squeeze(dat["eq6_m5_z"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
+        myDDTenFasz[ipnt,:,:,i]  = np.squeeze(dat["eq6_m7_z"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
         
         if pre.mode == "XYZUpDownSeparated":
-            myDDTenAlfx_2[ipnt,:,:,i] = np.squeeze(dat["m4_x"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-            myDDTenSlox_2[ipnt,:,:,i] = np.squeeze(dat["m6_x"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-            myDDTenFasx_2[ipnt,:,:,i] = np.squeeze(dat["m8_x"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-            myDDTenAlfy_2[ipnt,:,:,i] = np.squeeze(dat["m4_y"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-            myDDTenSloy_2[ipnt,:,:,i] = np.squeeze(dat["m6_y"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-            myDDTenFasy_2[ipnt,:,:,i] = np.squeeze(dat["m8_y"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-            myDDTenAlfz_2[ipnt,:,:,i] = np.squeeze(dat["m4_z"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-            myDDTenSloz_2[ipnt,:,:,i] = np.squeeze(dat["m6_z"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-            myDDTenFasz_2[ipnt,:,:,i] = np.squeeze(dat["m8_z"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
+            myDDTenAlfx_2[ipnt,:,:,i] = np.squeeze(dat["eq6_m4_x"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
+            myDDTenSlox_2[ipnt,:,:,i] = np.squeeze(dat["eq6_m6_x"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
+            myDDTenFasx_2[ipnt,:,:,i] = np.squeeze(dat["eq6_m8_x"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
+            myDDTenAlfy_2[ipnt,:,:,i] = np.squeeze(dat["eq6_m4_y"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
+            myDDTenSloy_2[ipnt,:,:,i] = np.squeeze(dat["eq6_m6_y"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
+            myDDTenFasy_2[ipnt,:,:,i] = np.squeeze(dat["eq6_m8_y"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
+            myDDTenAlfz_2[ipnt,:,:,i] = np.squeeze(dat["eq6_m4_z"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
+            myDDTenSloz_2[ipnt,:,:,i] = np.squeeze(dat["eq6_m6_z"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
+            myDDTenFasz_2[ipnt,:,:,i] = np.squeeze(dat["eq6_m8_z"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
         elif pre.mode == "revFor_combined":
-            myDDTenAlfx[ipnt,:,:,i] = myDDTenAlfx[ipnt,:,:,i] + np.squeeze(dat["m4_x"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-            myDDTenSlox[ipnt,:,:,i] = myDDTenSlox[ipnt,:,:,i] + np.squeeze(dat["m6_x"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-            myDDTenFasx[ipnt,:,:,i] = myDDTenFasx[ipnt,:,:,i] + np.squeeze(dat["m8_x"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-            myDDTenAlfy[ipnt,:,:,i] = myDDTenAlfy[ipnt,:,:,i] + np.squeeze(dat["m4_y"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-            myDDTenSloy[ipnt,:,:,i] = myDDTenSloy[ipnt,:,:,i] + np.squeeze(dat["m6_y"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-            myDDTenFasy[ipnt,:,:,i] = myDDTenFasy[ipnt,:,:,i] + np.squeeze(dat["m8_y"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-            myDDTenAlfz[ipnt,:,:,i] = myDDTenAlfz[ipnt,:,:,i] + np.squeeze(dat["m4_z"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-            myDDTenSloz[ipnt,:,:,i] = myDDTenSloz[ipnt,:,:,i] + np.squeeze(dat["m6_z"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-            myDDTenFasz[ipnt,:,:,i] = myDDTenFasz[ipnt,:,:,i] + np.squeeze(dat["m8_z"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])    
+            myDDTenAlfx[ipnt,:,:,i] = myDDTenAlfx[ipnt,:,:,i] + np.squeeze(dat["eq6_m4_x"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
+            myDDTenSlox[ipnt,:,:,i] = myDDTenSlox[ipnt,:,:,i] + np.squeeze(dat["eq6_m6_x"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
+            myDDTenFasx[ipnt,:,:,i] = myDDTenFasx[ipnt,:,:,i] + np.squeeze(dat["eq6_m8_x"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
+            myDDTenAlfy[ipnt,:,:,i] = myDDTenAlfy[ipnt,:,:,i] + np.squeeze(dat["eq6_m4_y"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
+            myDDTenSloy[ipnt,:,:,i] = myDDTenSloy[ipnt,:,:,i] + np.squeeze(dat["eq6_m6_y"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
+            myDDTenFasy[ipnt,:,:,i] = myDDTenFasy[ipnt,:,:,i] + np.squeeze(dat["eq6_m8_y"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
+            myDDTenAlfz[ipnt,:,:,i] = myDDTenAlfz[ipnt,:,:,i] + np.squeeze(dat["eq6_m4_z"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
+            myDDTenSloz[ipnt,:,:,i] = myDDTenSloz[ipnt,:,:,i] + np.squeeze(dat["eq6_m6_z"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
+            myDDTenFasz[ipnt,:,:,i] = myDDTenFasz[ipnt,:,:,i] + np.squeeze(dat["eq6_m8_z"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])    
         
         myax[  ipnt,:,:,i]      = np.squeeze(   datSp["ax"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
         myay[  ipnt,:,:,i]      = np.squeeze(   datSp["ay"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
@@ -222,9 +222,9 @@ for i in range(nt):
         mycs[  ipnt,:,:,i]      = np.sqrt(mycfz[ipnt,:,:,i]**2 + mycsz[ipnt,:,:,i]**2 - (myax[ipnt,:,:,i]**2 + myay[ipnt,:,:,i]**2 + myaz[ipnt,:,:,i]**2))
         if g > 0: 
             myEtot[ipnt,:,:,i]  = np.squeeze(datEn["Grv"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]]) + myEtot[ipnt,:,:,i]
-            myDDTenGra[ ipnt,:,:,i] = np.squeeze(dat["m9_z"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
+            myDDTenGra[ ipnt,:,:,i] = np.squeeze(dat["eq6_m9_z"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
         if divBCond: 
-            myDDTenDiv1[ ipnt,:,:,i] = np.squeeze(dat["m1_err"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
+            myDDTenDiv1[ ipnt,:,:,i] = np.squeeze(dat["eq6_m1_err"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
     
     dat.close()
     datSp.close()
@@ -321,14 +321,12 @@ del(mycsx,
 if rank == mainrank: print("Writing velocity components to file done!\n")
 
 
-myenDivx  = np.zeros(myshape)
-myenDivy  = np.zeros(myshape)
-myenDivz  = np.zeros(myshape)
-if divBCond: myenDiv1  = np.zeros(myshape)
-myenEntx  = np.zeros(myshape)
-myenEnty  = np.zeros(myshape)
-myenEntz  = np.zeros(myshape)
-if g > 0: myenGra  = np.zeros(myshape)
+myenDivx = np.zeros(myshape)
+myenDivy = np.zeros(myshape)
+myenDivz = np.zeros(myshape)
+myenEntx = np.zeros(myshape)
+myenEnty = np.zeros(myshape)
+myenEntz = np.zeros(myshape)
 myenAlfx = np.zeros(myshape)
 myenAlfy = np.zeros(myshape)
 myenAlfz = np.zeros(myshape)
@@ -338,6 +336,10 @@ myenSloz = np.zeros(myshape)
 myenFasx = np.zeros(myshape)
 myenFasy = np.zeros(myshape)
 myenFasz = np.zeros(myshape)
+
+if divBCond: myenDiv1  = np.zeros(myshape)
+
+if g > 0: myenGra  = np.zeros(myshape)
 
 if pre.mode == "XYZUpDownSeparated":
     myenAlfx_2 = np.zeros(myshape)
@@ -503,14 +505,17 @@ for ipnt in range(myshape[0]):
                 myenFasz_2[ipnt,k1,k2,:]   = pre.spy.integrate.cumtrapz(dat,time,axis=0,initial=0)
                 
 mask,dat = 0,0
+
 del(mask,
     dat)
 
 
 if rank == mainrank: print("Gathering the rate of energy change components...\n")
+
 DDTenDivx       = pre.APP.gather_array_ND(comm, rank, mainrank, domDecompND, myDDTenDivx)
 DDTenEntx       = pre.APP.gather_array_ND(comm, rank, mainrank, domDecompND, myDDTenEntx)
 DDTenAlfx       = pre.APP.gather_array_ND(comm, rank, mainrank, domDecompND, myDDTenAlfx)
+
 if pre.mode == "XYZUpDownSeparated":
     DDTenAlfx_2 = pre.APP.gather_array_ND(comm, rank, mainrank, domDecompND, myDDTenAlfx_2)
 

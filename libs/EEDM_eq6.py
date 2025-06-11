@@ -199,12 +199,12 @@ for i in range(slt,elt):
     #**********************************************************************************************************
     # Save the divB eigenenergy time derivatives
     hdfnew = pre.h5.File(outDirec+"EigenenergyDDT_"+filename[0:-4]+'.h5', 'w')
-    hdfnew.create_dataset('m1_x', data=np.array(divx,dtype='float64'), compression='gzip', compression_opts=9)
-    hdfnew.create_dataset('m1_y', data=np.array(divy,dtype='float64'), compression='gzip', compression_opts=9)
-    hdfnew.create_dataset('m1_z', data=np.array(divz,dtype='float64'), compression='gzip', compression_opts=9)
+    hdfnew.create_dataset('eq6_m1_x', data=np.array(divx,dtype='float64'), compression='gzip', compression_opts=9)
+    hdfnew.create_dataset('eq6_m1_y', data=np.array(divy,dtype='float64'), compression='gzip', compression_opts=9)
+    hdfnew.create_dataset('eq6_m1_z', data=np.array(divz,dtype='float64'), compression='gzip', compression_opts=9)
     
     if pre.divBCond:
-        hdfnew.create_dataset('m1_err', data=np.array(div1,dtype='float64'), compression='gzip', compression_opts=9)
+        hdfnew.create_dataset('eq6_m1_err', data=np.array(div1,dtype='float64'), compression='gzip', compression_opts=9)
         del(div1)
     
     # Save the time
@@ -234,21 +234,21 @@ for i in range(slt,elt):
     Entx = vsq * (vx * (pDx - c**2 * rhoDx)) / 2 / c**2
     Enty = vsq * (vy * (pDy - c**2 * rhoDy)) / 2 / c**2
     Entz = vsq * (vz * (pDz - c**2 * rhoDz)) / 2 / c**2
-    hdfnew.create_dataset('m9_x', data=np.array([0],dtype='float64'), compression='gzip', compression_opts=9)
-    hdfnew.create_dataset('m9_y', data=np.array([0],dtype='float64'), compression='gzip', compression_opts=9)
+    hdfnew.create_dataset('eq6_m9_x', data=np.array([0],dtype='float64'), compression='gzip', compression_opts=9)
+    hdfnew.create_dataset('eq6_m9_y', data=np.array([0],dtype='float64'), compression='gzip', compression_opts=9)
     if g == 0:
-        hdfnew.create_dataset('m9_z', data=np.array([0],dtype='float64'), compression='gzip', compression_opts=9)
+        hdfnew.create_dataset('eq6_m9_z', data=np.array([0],dtype='float64'), compression='gzip', compression_opts=9)
     else:
         Entx = Entx + g*vx*readObj.zc*(pDx/c**2 - rhoDx)
         Enty = Enty + g*vy*readObj.zc*(pDy/c**2 - rhoDy)
         Entz = Entz + (g*pDz*vz*readObj.zc)/c**2 - g*vz*readObj.zc*rhoDz
         
-        hdfnew.create_dataset('m9_z', data=np.array(- rho * g * vz,dtype='float64'), compression='gzip', compression_opts=9)
+        hdfnew.create_dataset('eq6_m9_z', data=np.array(- rho * g * vz,dtype='float64'), compression='gzip', compression_opts=9)
     
     #**********************************************************************************************************
-    hdfnew.create_dataset('m2_x', data=np.array(Entx,dtype='float64'), compression='gzip', compression_opts=9)
-    hdfnew.create_dataset('m2_y', data=np.array(Enty,dtype='float64'), compression='gzip', compression_opts=9)
-    hdfnew.create_dataset('m2_z', data=np.array(Entz,dtype='float64'), compression='gzip', compression_opts=9)
+    hdfnew.create_dataset('eq6_m2_x', data=np.array(Entx,dtype='float64'), compression='gzip', compression_opts=9)
+    hdfnew.create_dataset('eq6_m2_y', data=np.array(Enty,dtype='float64'), compression='gzip', compression_opts=9)
+    hdfnew.create_dataset('eq6_m2_z', data=np.array(Entz,dtype='float64'), compression='gzip', compression_opts=9)
     
     del(Entx,
         Enty,
@@ -282,12 +282,12 @@ for i in range(slt,elt):
     
     alfx1 = -0.5*((az*vy - ay*vz)*rho*(vx - np.abs(ax))*((az*vyDx - ay*vzDx)*sqmurho + (az*ByDx - ay*BzDx)*sx))/((ay**2 + az**2)*sqmurho)
     if waveCond: alfx1[maskWaveField] = 0.
-    hdfnew.create_dataset('m3_x', data=np.array(alfx1,dtype='float64'), compression='gzip', compression_opts=9)
+    hdfnew.create_dataset('eq6_m3_x', data=np.array(alfx1,dtype='float64'), compression='gzip', compression_opts=9)
     del(alfx1)
         
     alfx2 = -0.5*((az*vy - ay*vz)*rho*(vx + np.abs(ax))*((az*vyDx - ay*vzDx)*sqmurho + (-(az*ByDx) + ay*BzDx)*sx))/((ay**2 + az**2)*sqmurho)
     if waveCond: alfx2[maskWaveField] = 0.
-    hdfnew.create_dataset('m4_x', data=np.array(alfx2,dtype='float64'), compression='gzip', compression_opts=9)
+    hdfnew.create_dataset('eq6_m4_x', data=np.array(alfx2,dtype='float64'), compression='gzip', compression_opts=9)
     del(alfx2)
     
     print("rank = ", rank, " Memory used after Alfven = ", mem, " Gb")
@@ -346,10 +346,10 @@ for i in range(slt,elt):
         slowx2[maskWaveField] = 0.
     
     if pre.mode == "XYZUpDownSeparated":
-        hdfnew.create_dataset('m5_x', data=np.array(slowx1,dtype='float64'), compression='gzip', compression_opts=9)
-        hdfnew.create_dataset('m6_x', data=np.array(slowx2,dtype='float64'), compression='gzip', compression_opts=9)
+        hdfnew.create_dataset('eq6_m5_x', data=np.array(slowx1,dtype='float64'), compression='gzip', compression_opts=9)
+        hdfnew.create_dataset('eq6_m6_x', data=np.array(slowx2,dtype='float64'), compression='gzip', compression_opts=9)
     elif pre.mode == "UpDownCombined":
-        hdfnew.create_dataset('m5and6_x', data=np.array(slowx1 + slowx2,dtype='float64'), compression='gzip', compression_opts=9)
+        hdfnew.create_dataset('eq6_m5and6_x', data=np.array(slowx1 + slowx2,dtype='float64'), compression='gzip', compression_opts=9)
     
     del(slowx1, 
         slowx2)
@@ -383,10 +383,10 @@ for i in range(slt,elt):
         fastx2[maskWaveField] = 0.
     
     if pre.mode == "XYZUpDownSeparated":
-        hdfnew.create_dataset('m7_x', data=np.array(fastx1,dtype='float64'), compression='gzip', compression_opts=9)
-        hdfnew.create_dataset('m8_x', data=np.array(fastx2,dtype='float64'), compression='gzip', compression_opts=9)
+        hdfnew.create_dataset('eq6_m7_x', data=np.array(fastx1,dtype='float64'), compression='gzip', compression_opts=9)
+        hdfnew.create_dataset('eq6_m8_x', data=np.array(fastx2,dtype='float64'), compression='gzip', compression_opts=9)
     elif pre.mode == "UpDownCombined":
-        hdfnew.create_dataset('m7and8_x', data=np.array(fastx1 + fastx2,dtype='float64'), compression='gzip', compression_opts=9)
+        hdfnew.create_dataset('eq6_m7and8_x', data=np.array(fastx1 + fastx2,dtype='float64'), compression='gzip', compression_opts=9)
     
     del(fastx1, 
         fastx2)
@@ -422,12 +422,12 @@ for i in range(slt,elt):
     
     alfy1 = -0.5*((az*vx - ax*vz)*rho*(vy - np.abs(ay))*((az*vxDy - ax*vzDy)*sqmurho + (az*BxDy - ax*BzDy)*sy))/((ax**2 + az**2)*sqmurho)
     if waveCond: alfy1[maskWaveField] = 0.
-    hdfnew.create_dataset('m3_y', data=np.array(alfy1,dtype='float64'), compression='gzip', compression_opts=9)
+    hdfnew.create_dataset('eq6_m3_y', data=np.array(alfy1,dtype='float64'), compression='gzip', compression_opts=9)
     del(alfy1)
     
     alfy2 = -0.5*((az*vx - ax*vz)*rho*(vy + np.abs(ay))*((az*vxDy - ax*vzDy)*sqmurho + (-(az*BxDy) + ax*BzDy)*sy))/((ax**2 + az**2)*sqmurho)
     if waveCond: alfy2[maskWaveField] = 0.
-    hdfnew.create_dataset('m4_y', data=np.array(alfy2,dtype='float64'), compression='gzip', compression_opts=9)
+    hdfnew.create_dataset('eq6_m4_y', data=np.array(alfy2,dtype='float64'), compression='gzip', compression_opts=9)
     del(alfy2)
     
     # Slowy
@@ -454,10 +454,10 @@ for i in range(slt,elt):
         slowy2[maskWaveField] = 0.
     
     if pre.mode == "XYZUpDownSeparated":
-        hdfnew.create_dataset('m5_y', data=np.array(slowy1,dtype='float64'), compression='gzip', compression_opts=9)
-        hdfnew.create_dataset('m6_y', data=np.array(slowy2,dtype='float64'), compression='gzip', compression_opts=9)
+        hdfnew.create_dataset('eq6_m5_y', data=np.array(slowy1,dtype='float64'), compression='gzip', compression_opts=9)
+        hdfnew.create_dataset('eq6_m6_y', data=np.array(slowy2,dtype='float64'), compression='gzip', compression_opts=9)
     elif pre.mode == "UpDownCombined":
-        hdfnew.create_dataset('m5and6_y', data=np.array(slowy1 + slowy2,dtype='float64'), compression='gzip', compression_opts=9)
+        hdfnew.create_dataset('eq6_m5and6_y', data=np.array(slowy1 + slowy2,dtype='float64'), compression='gzip', compression_opts=9)
     
     del(slowy1, 
         slowy2)
@@ -490,10 +490,10 @@ for i in range(slt,elt):
         fasty2[maskWaveField] = 0.
     
     if pre.mode == "XYZUpDownSeparated":
-        hdfnew.create_dataset('m7_y', data=np.array(fasty1,dtype='float64'), compression='gzip', compression_opts=9)
-        hdfnew.create_dataset('m8_y', data=np.array(fasty2,dtype='float64'), compression='gzip', compression_opts=9)
+        hdfnew.create_dataset('eq6_m7_y', data=np.array(fasty1,dtype='float64'), compression='gzip', compression_opts=9)
+        hdfnew.create_dataset('eq6_m8_y', data=np.array(fasty2,dtype='float64'), compression='gzip', compression_opts=9)
     elif pre.mode == "UpDownCombined":
-        hdfnew.create_dataset('m7and8_y', data=np.array(fasty1 + fasty2,dtype='float64'), compression='gzip', compression_opts=9)
+        hdfnew.create_dataset('eq6_m7and8_y', data=np.array(fasty1 + fasty2,dtype='float64'), compression='gzip', compression_opts=9)
     
     del(fasty1, 
         fasty2)
@@ -525,12 +525,12 @@ for i in range(slt,elt):
     
     alfz1 = -0.5*((ay*vx - ax*vy)*rho*(vz - np.abs(az))*((ay*vxDz - ax*vyDz)*sqmurho + (ay*BxDz - ax*ByDz)*sz))/((ax**2 + ay**2)*sqmurho)
     if waveCond: alfz1[maskWaveField] = 0.
-    hdfnew.create_dataset('m3_z', data=np.array(alfz1,dtype='float64'), compression='gzip', compression_opts=9)
+    hdfnew.create_dataset('eq6_m3_z', data=np.array(alfz1,dtype='float64'), compression='gzip', compression_opts=9)
     del(alfz1)
     
     alfz2 = -0.5*((ay*vx - ax*vy)*rho*(vz + np.abs(az))*((ay*vxDz - ax*vyDz)*sqmurho + (-(ay*BxDz) + ax*ByDz)*sz))/((ax**2 + ay**2)*sqmurho)
     if waveCond: alfz2[maskWaveField] = 0.
-    hdfnew.create_dataset('m4_z', data=np.array(alfz2,dtype='float64'), compression='gzip', compression_opts=9)
+    hdfnew.create_dataset('eq6_m4_z', data=np.array(alfz2,dtype='float64'), compression='gzip', compression_opts=9)
     del(alfz2)
     
     # Slowz
@@ -557,10 +557,10 @@ for i in range(slt,elt):
         slowz2[maskWaveField] = 0.
     
     if pre.mode == "XYZUpDownSeparated":
-        hdfnew.create_dataset('m5_z', data=np.array(slowz1,dtype='float64'), compression='gzip', compression_opts=9)
-        hdfnew.create_dataset('m6_z', data=np.array(slowz2,dtype='float64'), compression='gzip', compression_opts=9)
+        hdfnew.create_dataset('eq6_m5_z', data=np.array(slowz1,dtype='float64'), compression='gzip', compression_opts=9)
+        hdfnew.create_dataset('eq6_m6_z', data=np.array(slowz2,dtype='float64'), compression='gzip', compression_opts=9)
     elif pre.mode == "UpDownCombined":
-        hdfnew.create_dataset('m5and6_z', data=np.array(slowz1 + slowz2,dtype='float64'), compression='gzip', compression_opts=9)
+        hdfnew.create_dataset('eq6_m5and6_z', data=np.array(slowz1 + slowz2,dtype='float64'), compression='gzip', compression_opts=9)
     
     del(slowz1, 
         slowz2)
@@ -595,10 +595,10 @@ for i in range(slt,elt):
         fastz2[maskWaveField] = 0.
     
     if pre.mode == "XYZUpDownSeparated":
-        hdfnew.create_dataset('m7_z', data=np.array(fastz1,dtype='float64'), compression='gzip', compression_opts=9)
-        hdfnew.create_dataset('m8_z', data=np.array(fastz2,dtype='float64'), compression='gzip', compression_opts=9)
+        hdfnew.create_dataset('eq6_m7_z', data=np.array(fastz1,dtype='float64'), compression='gzip', compression_opts=9)
+        hdfnew.create_dataset('eq6_m8_z', data=np.array(fastz2,dtype='float64'), compression='gzip', compression_opts=9)
     elif pre.mode == "UpDownCombined":
-        hdfnew.create_dataset('m7and8_z', data=np.array(fastz1 + fastz2,dtype='float64'), compression='gzip', compression_opts=9)
+        hdfnew.create_dataset('eq6_m7and8_z', data=np.array(fastz1 + fastz2,dtype='float64'), compression='gzip', compression_opts=9)
     
     del(fastz1, 
         fastz2)

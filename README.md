@@ -45,65 +45,57 @@ Due to the storage-intensive nature of the analysis, the user is given the optio
 
 Note that computing Equation 6 is a prerequisite for computing Equation 9.
 
-## Output keys of Equations 6 (found in [SimulationDir/EEDM])
+## Output keys of Equations 6 ("EigenenergyDDT_[snapshot_name].h5" found in [SimulationDir/EEDM])
 
-###q-directed: 
-&nbsp;&nbsp;&nbsp;&nbsp;Divergence: "m1_q"
-
-&nbsp;&nbsp;&nbsp;&nbsp;Entropy&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: "m2_q"
-
-&nbsp;&nbsp;&nbsp;&nbsp;Aflven-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:    "m3_q"
-
-&nbsp;&nbsp;&nbsp;&nbsp;Aflven+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:    "m4_q"
-
-&nbsp;&nbsp;&nbsp;&nbsp;slow-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:    "m5_q"
-
-&nbsp;&nbsp;&nbsp;&nbsp;slow+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:    "m6_q"
-
-&nbsp;&nbsp;&nbsp;&nbsp;fast-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:    "m7_q"
-
-&nbsp;&nbsp;&nbsp;&nbsp;fast+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:    "m8_q"
-
-&nbsp;&nbsp;&nbsp;&nbsp;Gravity&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:    "m9_z"
-
+###q-directed (for q in [x,y,z]): 
+```text
+    Divergence: "eq6_m1_q"
+    Entropy   : "eq6_m2_q"
+    Aflven-   : "eq6_m3_q"
+    Aflven+   : "eq6_m4_q"
+    slow-     : "eq6_m5_q"
+    slow+     : "eq6_m6_q"
+    fast-     : "eq6_m7_q"
+    fast+     : "eq6_m8_q"
+    Gravity   : "eq6_m9_z"
+```
 
 ## Output keys of Equations 9 (found in [SimulationDir/EEDM/energySliced])
 These 2D-slabs contain both the eigenenergy time derivatives and the eigenenergies on the specified 2D planes.
 
-###q-directed eigenenergy time derivatives: 
-&nbsp;&nbsp;&nbsp;&nbsp;Divergence: "eq6_m1_q"
+###q-directed eigenenergies (for q in [x,y,z]): 
+```text
+    Divergence: "eq9_m1_q"
+    Entropy   : "eq9_m2_q"
+    Aflven-   : "eq9_m3_q"
+    Aflven+   : "eq9_m4_q"
+    slow-     : "eq9_m5_q"
+    slow+     : "eq9_m6_q"
+    fast-     : "eq9_m7_q"
+    fast+     : "eq9_m8_q"
+    Gravity   : "eq9_m9_z"
+```
 
-&nbsp;&nbsp;&nbsp;&nbsp;Entropy&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: "eq6_m2_q"
+## Output keys of the characteristic speeds ("Speed_[snapshot_name].h5" found in [SimulationDir/EEDM])
+###q-directed speeds (for q in [x,y,z]): 
+```text
+    Aflven: "aq"
+    slow  : "csq"
+    fast  : "cfq"
+    sound : "c"
+```
 
-&nbsp;&nbsp;&nbsp;&nbsp;Aflven-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:    "eq6_m3_q"
+## Output keys of kinetic, internal, magnetic, and gravity energies ("Etot_[snapshot_name].h5" found in [SimulationDir/EEDM])
+```text
+    Kinetic : "Kin"
+    Internal: "Int"
+    Magnetic: "Mag"
+    Gravity : "Grv"
+```
 
-&nbsp;&nbsp;&nbsp;&nbsp;Aflven+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:    "eq6_m4_q"
-
-&nbsp;&nbsp;&nbsp;&nbsp;slow-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:    "eq6_m5_q"
-
-&nbsp;&nbsp;&nbsp;&nbsp;slow+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:    "eq6_m6_q"
-
-&nbsp;&nbsp;&nbsp;&nbsp;fast-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:    "eq6_m7_q"
-
-&nbsp;&nbsp;&nbsp;&nbsp;fast+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:    "eq6_m8_q"
-
-&nbsp;&nbsp;&nbsp;&nbsp;Gravity&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:    "eq6_m9_z"
-
-###q-directed eigenenergies: 
-&nbsp;&nbsp;&nbsp;&nbsp;Divergence: "eq9_m1_q"
-
-&nbsp;&nbsp;&nbsp;&nbsp;Entropy&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: "eq9_m2_q"
-
-&nbsp;&nbsp;&nbsp;&nbsp;Aflven-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:    "eq9_m3_q"
-
-&nbsp;&nbsp;&nbsp;&nbsp;Aflven+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:    "eq9_m4_q"
-
-&nbsp;&nbsp;&nbsp;&nbsp;slow-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:    "eq9_m5_q"
-
-&nbsp;&nbsp;&nbsp;&nbsp;slow+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:    "eq9_m6_q"
-
-&nbsp;&nbsp;&nbsp;&nbsp;fast-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:    "eq9_m7_q"
-
-&nbsp;&nbsp;&nbsp;&nbsp;fast+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:    "eq9_m8_q"
-
-&nbsp;&nbsp;&nbsp;&nbsp;Gravity&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:    "eq9_m9_z"
+In addition to the above, the first Etot h5 datafile also contains the grid information, which varies from code for code. However, since the current EEDM code handles the computations by mapping the plasma state vector onto a regular cell-centered grid, it suffices to only read this data:
+```text
+    Cell-centered x-axis: "xc"
+    Cell-centered y-axis: "yc"
+    Cell-centered z-axis: "zc"
+```
