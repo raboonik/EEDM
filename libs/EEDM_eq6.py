@@ -58,14 +58,15 @@ for i in range(slt,elt):
     # Save the grid and parameters in onlt the first Etot file
     hdfEtot.attrs['g'] = g
     if i == 0:
-        hdfEtot.create_dataset('xc', data=np.array(readObj.xc,dtype='float64'), compression='gzip', compression_opts=9)       
-        hdfEtot.create_dataset('yc', data=np.array(readObj.yc,dtype='float64'), compression='gzip', compression_opts=9)     
-        hdfEtot.create_dataset('zc', data=np.array(readObj.zc,dtype='float64'), compression='gzip', compression_opts=9)
-        hdfEtot.create_dataset('xb', data=np.array(readObj.xb,dtype='float64'), compression='gzip', compression_opts=9)       
-        hdfEtot.create_dataset('yb', data=np.array(readObj.yb,dtype='float64'), compression='gzip', compression_opts=9)     
-        hdfEtot.create_dataset('zb', data=np.array(readObj.zb,dtype='float64'), compression='gzip', compression_opts=9)
+        hdfEtot.create_dataset('xc',     data=np.array(readObj.xc    ,dtype='float64'), compression='gzip', compression_opts=9)
+        hdfEtot.create_dataset('yc',     data=np.array(readObj.yc    ,dtype='float64'), compression='gzip', compression_opts=9)
+        hdfEtot.create_dataset('zc',     data=np.array(readObj.zc    ,dtype='float64'), compression='gzip', compression_opts=9)
+        hdfEtot.create_dataset('xb',     data=np.array(readObj.xb    ,dtype='float64'), compression='gzip', compression_opts=9)
+        hdfEtot.create_dataset('yb',     data=np.array(readObj.yb    ,dtype='float64'), compression='gzip', compression_opts=9)
+        hdfEtot.create_dataset('zb',     data=np.array(readObj.zb    ,dtype='float64'), compression='gzip', compression_opts=9)
         hdfEtot.create_dataset('frameb', data=np.array(readObj.frameb,dtype='float64'), compression='gzip', compression_opts=9)
         hdfEtot.create_dataset('framec', data=np.array(readObj.framec,dtype='float64'), compression='gzip', compression_opts=9)
+        
         hdfEtot.attrs['pre.mode'] = pre.pre.mode
         hdfEtot.attrs['divBCond'] = pre.divBCond
         hdfEtot.attrs['gamma']    = gamma
