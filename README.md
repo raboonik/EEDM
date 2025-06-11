@@ -9,25 +9,101 @@ Email: raboonik@gmail.com
 Git:   https://github.com/raboonik
 
 # Important note
-This version currently only works with Lare3D V2 and V3, and supports the .sdf and .cfd snapshot extensions. Get in touch if you want me to add support for your code!
+This version currently only works with Lare3D V2 and V3, and supports the .sdf and .cfd snapshot extensions. Get in touch if you want me to add support for your MHD simulation code!
 
-# How to use
-## Step 0
+# How to run
+## Step 0: Required pyton3 libraries
 Make sure the following python3 packages are installed
 
 &nbsp;&nbsp;&nbsp;&nbsp; Numpy
 
-&nbsp;&nbsp;&nbsp;&nbsp; SciPy 1.10.1 (pip install --force-reinstall -v "scipy==1.10.1")
+&nbsp;&nbsp;&nbsp;&nbsp; SciPy 1.10.1 (pip3 install --force-reinstall -v "scipy==1.10.1")
 
 &nbsp;&nbsp;&nbsp;&nbsp; mpi4py
 
-## Step 1
-git clone https://github.com/raboonik/EEDM.git   [DestinationDir]
+## Step 1: Getting the code
+&nbsp;&nbsp;&nbsp;&nbsp; git clone https://github.com/raboonik/EEDM.git   [DestinationDir]
 
-## Step 2
-Modify settings.py
+## Step 2: Setting up the analysis
+&nbsp;&nbsp;&nbsp;&nbsp; cd [DestinationDir]
 
-cd [DestinationDir]
+&nbsp;&nbsp;&nbsp;&nbsp; Modify settings.py to set the analysis tasks
 
-## Step 3
-mpirun -n [#cores] python3 EEDM.py
+## Step 3: Running the code
+&nbsp;&nbsp;&nbsp;&nbsp; mpirun -n [#cores] python3 EEDM.py
+
+# Outputs
+The curent version of the code outputs h5 files containing the eigenenergies (and/or their time derivatives) associated with each of the nine gravitational-ideal-MHD modes in each of the three x, y, and z directions separately. The computations are done according to the Equations 6 and 9 of [Paper 3](https://iopscience.iop.org/article/10.3847/1538-4357/ad3bb6). If g = 0, the code reduces to the non-gravitational ideal-MHD equations of [Paper 2](https://iopscience.iop.org/article/10.3847/1538-4357/ad8dc8/meta). 
+
+The outputs of the eigenenergy time derivatives (Equations 6) and the eigenenergies themselves (Equation 9) are stored in separate directories: 
+
+&nbsp;&nbsp;&nbsp;&nbsp;Equation6 -> [SimulationDir/EEDM]
+
+&nbsp;&nbsp;&nbsp;&nbsp;Equation9 -> [SimulationDir/EEDM/energySliced]
+
+Due to the storage-intensive nature of the analysis, the user is given the option to compute the eigenenergies (Equation 9; stored in [SimulationDir/EEDM/energySliced]) on one or more 2D slabs. This is controlled by the "slicingPlane" and "slicingPnts" variables in settings.py.
+
+Note that computing Equation 6 is a prerequisite for computing Equation 9.
+
+## Output keys of Equations 6 (found in [SimulationDir/EEDM])
+
+###q-directed: 
+&nbsp;&nbsp;&nbsp;&nbsp;Divergence: "m1_q"
+
+&nbsp;&nbsp;&nbsp;&nbsp;Entropy&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: "m2_q"
+
+&nbsp;&nbsp;&nbsp;&nbsp;Aflven-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:    "m3_q"
+
+&nbsp;&nbsp;&nbsp;&nbsp;Aflven+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:    "m4_q"
+
+&nbsp;&nbsp;&nbsp;&nbsp;slow-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:    "m5_q"
+
+&nbsp;&nbsp;&nbsp;&nbsp;slow+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:    "m6_q"
+
+&nbsp;&nbsp;&nbsp;&nbsp;fast-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:    "m7_q"
+
+&nbsp;&nbsp;&nbsp;&nbsp;fast+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:    "m8_q"
+
+&nbsp;&nbsp;&nbsp;&nbsp;Gravity&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:    "m9_z"
+
+
+## Output keys of Equations 9 (found in [SimulationDir/EEDM/energySliced])
+These 2D-slabs contain both the eigenenergy time derivatives and the eigenenergies on the specified 2D planes.
+
+###q-directed eigenenergy time derivatives: 
+&nbsp;&nbsp;&nbsp;&nbsp;Divergence: "eq6_m1_q"
+
+&nbsp;&nbsp;&nbsp;&nbsp;Entropy&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: "eq6_m2_q"
+
+&nbsp;&nbsp;&nbsp;&nbsp;Aflven-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:    "eq6_m3_q"
+
+&nbsp;&nbsp;&nbsp;&nbsp;Aflven+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:    "eq6_m4_q"
+
+&nbsp;&nbsp;&nbsp;&nbsp;slow-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:    "eq6_m5_q"
+
+&nbsp;&nbsp;&nbsp;&nbsp;slow+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:    "eq6_m6_q"
+
+&nbsp;&nbsp;&nbsp;&nbsp;fast-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:    "eq6_m7_q"
+
+&nbsp;&nbsp;&nbsp;&nbsp;fast+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:    "eq6_m8_q"
+
+&nbsp;&nbsp;&nbsp;&nbsp;Gravity&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:    "eq6_m9_z"
+
+###q-directed eigenenergies: 
+&nbsp;&nbsp;&nbsp;&nbsp;Divergence: "eq9_m1_q"
+
+&nbsp;&nbsp;&nbsp;&nbsp;Entropy&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: "eq9_m2_q"
+
+&nbsp;&nbsp;&nbsp;&nbsp;Aflven-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:    "eq9_m3_q"
+
+&nbsp;&nbsp;&nbsp;&nbsp;Aflven+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:    "eq9_m4_q"
+
+&nbsp;&nbsp;&nbsp;&nbsp;slow-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:    "eq9_m5_q"
+
+&nbsp;&nbsp;&nbsp;&nbsp;slow+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:    "eq9_m6_q"
+
+&nbsp;&nbsp;&nbsp;&nbsp;fast-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:    "eq9_m7_q"
+
+&nbsp;&nbsp;&nbsp;&nbsp;fast+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:    "eq9_m8_q"
+
+&nbsp;&nbsp;&nbsp;&nbsp;Gravity&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:    "eq9_m9_z"
