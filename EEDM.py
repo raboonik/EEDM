@@ -27,12 +27,12 @@
         │     ├── EEDM_eq6.py
         │     ├── EEDM_eq9.py
         │     ├── eigenDecompFuncs.py
-        │     ├── get_energy_sliced_parallel_funcs.py
+        │     ├── get_energy_sliced.py
         │     ├── prerequisites.py
-        │     └── reader.py
-        ├── main.py
-        ├── settings.py
-        └── SI_constants.py
+        │     ├── reader.py
+        │     └── SI_constants.py
+        ├── EEDM.py
+        └── settings.py
 '''
 
 #◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈

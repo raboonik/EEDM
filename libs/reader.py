@@ -15,7 +15,9 @@ from libs import prerequisites as pre
 '''
 
 class EEDM_reader:
-    def __init__(self):        
+    def __init__(self):
+        
+        # The code independent part of the reader
         self.feed = pre.fid(pre.datapath + '*.' + pre.dataExt)
         self.nt   = len(self.feed)
         
@@ -26,6 +28,7 @@ class EEDM_reader:
         
         if self.nt == 0: raise ValueError("No snapshots found in " + pre.datapath)
         
+        # The code dependent part
         if pre.simCode == 'lare':
             if pre.dim == 3:
                 if pre.dataExt == 'sdf':
@@ -70,12 +73,12 @@ class EEDM_reader:
                     
                     rho = (pre.np.transpose(dat["rho"]   )[1:,1:,1:])[self.framec[0]:self.framec[1],self.framec[2]:self.framec[3],self.framec[4]:self.framec[5]]
                     en  = (pre.np.transpose(dat["energy"])[1:,1:,1:])[self.framec[0]:self.framec[1],self.framec[2]:self.framec[3],self.framec[4]:self.framec[5]]
-                    vx  =  pre.np.transpose(dat["vx"])[self.frameb[0]:self.frameb[1],self.frameb[2]:self.frameb[3],self.frameb[4]:self.frameb[5]]
-                    vy  =  pre.np.transpose(dat["vy"])[self.frameb[0]:self.frameb[1],self.frameb[2]:self.frameb[3],self.frameb[4]:self.frameb[5]]
-                    vz  =  pre.np.transpose(dat["vz"])[self.frameb[0]:self.frameb[1],self.frameb[2]:self.frameb[3],self.frameb[4]:self.frameb[5]]
-                    bx  = (pre.np.transpose(dat["bx"])[:,1:,1:])[self.frameb[0]:self.frameb[1],self.framec[2]:self.framec[3],self.framec[4]:self.framec[5]]
-                    by  = (pre.np.transpose(dat["by"])[1:,:,1:])[self.framec[0]:self.framec[1],self.frameb[2]:self.frameb[3],self.framec[4]:self.framec[5]]
-                    bz  = (pre.np.transpose(dat["bz"])[1:,1:,:])[self.framec[0]:self.framec[1],self.framec[2]:self.framec[3],self.frameb[4]:self.frameb[5]]
+                    vx  =  pre.np.transpose(dat["vx"]               )[self.frameb[0]:self.frameb[1],self.frameb[2]:self.frameb[3],self.frameb[4]:self.frameb[5]]
+                    vy  =  pre.np.transpose(dat["vy"]               )[self.frameb[0]:self.frameb[1],self.frameb[2]:self.frameb[3],self.frameb[4]:self.frameb[5]]
+                    vz  =  pre.np.transpose(dat["vz"]               )[self.frameb[0]:self.frameb[1],self.frameb[2]:self.frameb[3],self.frameb[4]:self.frameb[5]]
+                    bx  = (pre.np.transpose(dat["bx"]    )[:,1:,1:] )[self.frameb[0]:self.frameb[1],self.framec[2]:self.framec[3],self.framec[4]:self.framec[5]]
+                    by  = (pre.np.transpose(dat["by"]    )[1:,:,1:] )[self.framec[0]:self.framec[1],self.frameb[2]:self.frameb[3],self.framec[4]:self.framec[5]]
+                    bz  = (pre.np.transpose(dat["bz"]    )[1:,1:,:] )[self.framec[0]:self.framec[1],self.framec[2]:self.framec[3],self.frameb[4]:self.frameb[5]]
                 else:
                     # Extension already handled
                     pass
