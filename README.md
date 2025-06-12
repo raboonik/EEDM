@@ -45,15 +45,15 @@ The curent version of the code outputs h5 files containing the eigenenergies (an
 
 The outputs of the eigenenergy time derivatives (Equations 6) and the eigenenergies themselves (Equation 9) are stored in separate directories: 
 
-&nbsp;&nbsp;&nbsp;&nbsp;Equation6 -> [SimulationDir/EEDM]
+&nbsp;&nbsp;&nbsp;&nbsp;Equation6 -> [SimulationDir/EEDM_results]
 
-&nbsp;&nbsp;&nbsp;&nbsp;Equation9 -> [SimulationDir/EEDM/energySliced]
+&nbsp;&nbsp;&nbsp;&nbsp;Equation9 -> [SimulationDir/EEDM_results/energySliced]
 
-Due to the storage-intensive nature of the analysis, the user is given the option to compute the eigenenergies (Equation 9; stored in [SimulationDir/EEDM/energySliced]) on one or more 2D slabs. This is controlled by the "slicingPlane" and "slicingPnts" variables in settings.py.
+Due to the storage-intensive nature of the analysis, the user is given the option to compute the eigenenergies (Equation 9; stored in [SimulationDir/EEDM_results/energySliced]) on one or more 2D slabs. This is controlled by the "slicingPlane" and "slicingPnts" variables in settings.py.
 
 Note that computing Equation 6 is a prerequisite for computing Equation 9.
 
-## Output keys of Equations 6 ("EigenenergyDDT_[snapshot_name].h5" found in [SimulationDir/EEDM])
+## Output keys of Equations 6 ("EigenenergyDDT_[snapshot_name].h5" found in [SimulationDir/EEDM_results])
 
 ###q-directed (for q in [x,y,z]): 
 ```text
@@ -68,7 +68,7 @@ Note that computing Equation 6 is a prerequisite for computing Equation 9.
     Gravity   : "eq6_m9_z"
 ```
 
-## Output keys of Equations 9 (found in [SimulationDir/EEDM/energySliced])
+## Output keys of Equations 9 (found in [SimulationDir/EEDM_results/energySliced])
 These 2D-slabs contain both the eigenenergy time derivatives and the eigenenergies on the specified 2D planes.
 
 ###q-directed eigenenergies (for q in [x,y,z]): 
@@ -84,7 +84,7 @@ These 2D-slabs contain both the eigenenergy time derivatives and the eigenenergi
     Gravity   : "eq9_m9_z"
 ```
 
-## Output keys of the characteristic speeds ("Speed_[snapshot_name].h5" found in [SimulationDir/EEDM])
+## Output keys of the characteristic speeds ("Speed_[snapshot_name].h5" found in [SimulationDir/EEDM_results])
 ###q-directed speeds (for q in [x,y,z]): 
 ```text
     Aflven: "aq"
@@ -93,7 +93,7 @@ These 2D-slabs contain both the eigenenergy time derivatives and the eigenenergi
     sound : "c"
 ```
 
-## Output keys of kinetic, internal, magnetic, and gravity energies ("Etot_[snapshot_name].h5" found in [SimulationDir/EEDM])
+## Output keys of kinetic, internal, magnetic, and gravity energies ("Etot_[snapshot_name].h5" found in [SimulationDir/EEDM_results])
 ```text
     Kinetic : "Kin"
     Internal: "Int"

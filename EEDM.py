@@ -56,7 +56,7 @@ mainrank = 0                          #◈
 #◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
 
 datapath = pre.add_slash(pre.datapath)
-outDirec = datapath + 'EEDM/'
+outDirec = datapath + 'EEDM_results/'
 
 if rank == 0:
     err = pre.bash("cd " + outDirec)
