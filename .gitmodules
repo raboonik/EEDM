@@ -1,0 +1,3 @@
+[submodule "libs/AutoParallelizePy"]
+	path = libs/AutoParallelizePy
+	url = https://github.com/raboonik/AutoParallelizePy.git
