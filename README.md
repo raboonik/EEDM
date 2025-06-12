@@ -26,7 +26,7 @@ Make sure the following python3 packages are installed
 &nbsp;&nbsp;&nbsp;&nbsp; > **Note for LareXd > V3 users:** If you are working with .sdf files, it is assumed that a compatible Python interface for reading this format already exists in your environment.
 
 ## Step 1: Getting the code
-&nbsp;&nbsp;&nbsp;&nbsp; git clone https://github.com/raboonik/EEDM.git   [DestinationDir]
+&nbsp;&nbsp;&nbsp;&nbsp; git clone --recurse-submodules https://github.com/raboonik/EEDM.git   [DestinationDir]
 
 ## Step 2: Setting up the analysis
 &nbsp;&nbsp;&nbsp;&nbsp; cd [DestinationDir]
