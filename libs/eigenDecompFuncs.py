@@ -119,10 +119,3 @@ def getCropIndecies3D(obj, framexb, frameyb, framezb):
         framec[4:] = [0,zc.shape[0]+1]
     
     return xb, yb, zb, xc, yc, zc, frameb, framec
-
-def get_datname_lare(datnum):
-    if   len(str(datnum)) == 1: out = '000'+ str(datnum) + '.sdf'
-    elif len(str(datnum)) == 2: out = '00'+ str(datnum)  + '.sdf'
-    elif len(str(datnum)) == 3: out = '0'+ str(datnum)   + '.sdf'
-    elif len(str(datnum)) == 4: out = str(datnum)        + '.sdf'
-    return out
