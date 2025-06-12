@@ -8,8 +8,12 @@ Email: raboonik@gmail.com
 
 Git:   https://github.com/raboonik
 
-# Important note
-This version currently only works with Lare3D V2 and V3, and supports the .sdf and .cfd snapshot extensions. Get in touch if you want me to add support for your MHD simulation code!
+# Important notes
+
+**1)** When cloning, use the **`--recurse-submodules`** option.
+
+**2)** This version currently only works with Lare3D V2 and V3, and supports the .sdf and .cfd snapshot extensions. Get in touch if you want me to add support for your MHD simulation code!
+
 
 # How to run
 ## Step 0: Required pyton3 libraries
@@ -19,22 +23,22 @@ Make sure the following python3 packages are installed
 
 &nbsp;&nbsp;&nbsp;&nbsp; h5py
 
-&nbsp;&nbsp;&nbsp;&nbsp; SciPy 1.10.1 (pip3 install --force-reinstall -v "scipy==1.10.1")
+&nbsp;&nbsp;&nbsp;&nbsp; SciPy 1.10.1 (`pip3 install --force-reinstall -v "scipy==1.10.1"`)
 
 &nbsp;&nbsp;&nbsp;&nbsp; mpi4py
 
 &nbsp;&nbsp;&nbsp;&nbsp; > **Note for LareXd > V3 users:** If you are working with .sdf files, it is assumed that a compatible Python interface for reading this format already exists in your environment.
 
 ## Step 1: Getting the code
-&nbsp;&nbsp;&nbsp;&nbsp; git clone --recurse-submodules https://github.com/raboonik/EEDM.git   [DestinationDir]
+&nbsp;&nbsp;&nbsp;&nbsp; `git clone --recurse-submodules https://github.com/raboonik/EEDM.git   [DestinationDir]`
 
 ## Step 2: Setting up the analysis
-&nbsp;&nbsp;&nbsp;&nbsp; cd [DestinationDir]
+&nbsp;&nbsp;&nbsp;&nbsp; `cd [DestinationDir]`
 
-&nbsp;&nbsp;&nbsp;&nbsp; Modify settings.py to set the analysis tasks
+&nbsp;&nbsp;&nbsp;&nbsp; Modify `settings.py` to set the analysis tasks
 
 ## Step 3: Running the code
-&nbsp;&nbsp;&nbsp;&nbsp; mpirun -n [#cores] python3 EEDM.py
+&nbsp;&nbsp;&nbsp;&nbsp; `mpirun -n [#cores] python3 EEDM.py`
 
 # Outputs
 The curent version of the code outputs h5 files containing the eigenenergies (and/or their time derivatives) associated with each of the nine gravitational-ideal-MHD modes in each of the three x, y, and z directions separately. The computations are done according to the Equations 6 and 9 of [Paper 3](https://iopscience.iop.org/article/10.3847/1538-4357/adc917). If g = 0, the code reduces to the non-gravitational ideal-MHD equations of [Paper 2](https://iopscience.iop.org/article/10.3847/1538-4357/ad8dc8/meta). 
