@@ -10,7 +10,7 @@ Git:   https://github.com/raboonik
 
 # Important notes
 
-**1)** When cloning, use the **`--recurse-submodules`** option.
+**1)** When cloning, use the **`--recurse-submodules`** option (see Step 1 below).
 
 **2)** This version currently only works with Lare3D V2 and V3, and supports the `.sdf` and `.cfd` snapshot extensions. Get in touch if you want me to add support for your MHD simulation code!
 
