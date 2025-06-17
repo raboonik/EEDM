@@ -16,10 +16,7 @@ authors:
 repository-code: 'https://github.com/raboonik/EEDM.git'
 url: 'https://github.com/raboonik/EEDM.git'
 abstract: >-
-  An easy-to-implement python library plugin for mpi4py
-  along with worked examples designed to streamline domain
-  decomposition and add a simplifying layer to noncontiguous
-  MPI parallelization of multidimensional datasets.
+  An MPI-parallelized python package to compute the eigenenergies described in a series of publications titled "Exact Nonlinear Decomposition of Ideal-MHD Waves Using Eigenenergies (EEDM)".
 license: Apache-2.0
 commit: Commit 3
 date-released: '2025-06-10'
