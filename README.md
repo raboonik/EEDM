@@ -33,12 +33,21 @@ Make sure the following python3 packages are installed
 &nbsp;&nbsp;&nbsp;&nbsp; `git clone --recurse-submodules https://github.com/raboonik/EEDM.git`
 
 ## Step 2: Setting up the analysis
-&nbsp;&nbsp;&nbsp;&nbsp; `cd EEDM`
+&nbsp;&nbsp;&nbsp;&nbsp; `cd EEDM/`
 
 &nbsp;&nbsp;&nbsp;&nbsp; Modify `settings.py` to set the analysis tasks
 
-## Step 3: Running the code as a package
+## Step 3: Running the Code as a Package
+Run the code from `EEDM/` using:
+
 &nbsp;&nbsp;&nbsp;&nbsp; `mpirun -n [#cores] python3 -m eedm`
+
+### Note
+You can also install the EEDM package and run it from anywhere (inside or outside of `EEDM/`) using the same command. To install in *editable* mode, run:
+
+&nbsp;&nbsp;&nbsp;&nbsp; `cd EEDM/`
+
+&nbsp;&nbsp;&nbsp;&nbsp; `pip install -e .`
 
 # Outputs
 The curent version of the code outputs h5 files containing the eigenenergies (and/or their time derivatives) associated with each of the nine gravitational-ideal-MHD modes in each of the three x, y, and z directions separately. The computations are done according to the Equations 6 and 9 of [Paper 3](https://iopscience.iop.org/article/10.3847/1538-4357/adc917). If g = 0, the code reduces to the non-gravitational ideal-MHD equations of [Paper 2](https://iopscience.iop.org/article/10.3847/1538-4357/ad8dc8/meta). 
