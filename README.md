@@ -1,5 +1,5 @@
 # Eigenenergy Decomposition Method (EEDM)
-EEDM is an exact 3D method of breaking down the total energy density associated with compound nonlinear gravitational ideal-MHD disturbances into the energy contributions carried by each eigenmode. For more details, see [Paper 1](https://iopscience.iop.org/article/10.3847/1538-4357/ad3bb6/meta), [Paper 2](https://iopscience.iop.org/article/10.3847/1538-4357/ad8dc8/meta) , and [Paper 3](https://iopscience.iop.org/article/10.3847/1538-4357/adc917). For the MPI-parallelized domain decomposition, the [AutoParallelizePy](https://github.com/raboonik/AutoParallelizePy) python plug-in is used.
+EEDM is an exact 3D method of breaking down the total energy density associated with compound nonlinear gravitational ideal-MHD disturbances into the energy contributions carried by each eigenmode. For more details, see [Paper 1](https://iopscience.iop.org/article/10.3847/1538-4357/ad3bb6/meta), [Paper 2](https://iopscience.iop.org/article/10.3847/1538-4357/ad8dc8/meta) , and [Paper 3](https://iopscience.iop.org/article/10.3847/1538-4357/adc917). For the MPI-parallelized domain decomposition, the [AutoParallelizePy](https://github.com/raboonik/AutoParallelizePy) Python plug-in is used.
 
 # Author information
 Axel Raboonik
@@ -17,7 +17,7 @@ Git:   https://github.com/raboonik
 
 # How to run
 ## Step 0: Required pyton3 libraries
-Make sure the following python3 packages are installed
+Make sure the following `Python3` packages are installed
 
 &nbsp;&nbsp;&nbsp;&nbsp; `numpy`
 

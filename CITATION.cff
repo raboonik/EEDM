@@ -16,7 +16,7 @@ authors:
 repository-code: 'https://github.com/raboonik/EEDM.git'
 url: 'https://github.com/raboonik/EEDM.git'
 abstract: >-
-  An MPI-parallelized python package to compute the eigenenergies described in a series of publications titled "Exact Nonlinear Decomposition of Ideal-MHD Waves Using Eigenenergies (EEDM)".
+  An MPI-parallelized Python package to compute the eigenenergies described in a series of publications titled "Exact Nonlinear Decomposition of Ideal-MHD Waves Using Eigenenergies (EEDM)".
 license: Apache-2.0
-commit: Commit 3
-date-released: '2025-06-10'
+commit: Version 0.1.0
+date-released: '2025-06-17'
