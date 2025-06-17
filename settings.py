@@ -21,10 +21,7 @@ from eedm import SI_constants as const
 
 simCode   = "lare"
 dataExt   = "cfd" # sdf or cfd
-dataExt   = "sdf" # sdf or cfd
 datapath  = "/home/user/simulationDir/"
-datapath  = "/home/abbas/temp/Lucas_GT_subregion_stratifiedVertical/"
-datapath  = "/home/abbas/temp/3DTorsionalAlfven_lare3d_3.4.1_Arbitrary_uniformIsoVertical_smooth_stratifiedVertical_new/Data/"
 
 # Data dimensionality (True: dimensional, False: non-dimensional)
 dimensional = False
@@ -34,7 +31,6 @@ dim = 3
 
 # # Gravitational acceleration along -z in your code's units: MAKE SURE "g" IS INDEED A CONSTANT IN THE SIMULATION
 g = 274 * 1.5e5 * const.mf * const.mh / 5778. / const.kb
-g = 1.039067828195592
 
 gamma = 5/3
 
@@ -45,14 +41,12 @@ mode = "XYZUpDownSeparated"
     # Options: "eq6", "eq9", "both"
     # eq9 depends on eq6
 computationSwitch = "both"
-computationSwitch = "both"
 
 # If eq9 to be computed, choose the slab planes and the slicing point locations across these plane-normal direction
 # Since time integration needs to be performed, this slicing makes the computation faster. Simply select all the points
 # along the plane-normal direction to run the computation for the entire 3D domain (MASSIVE DATA WARNING!)
 slicingPlane = "xz"
 slicingPnts  = [-1.5, 0., 1.1, 2.3] # Measured in code's length unit
-slicingPnts  = [0.] # Measured in code's length unit
 # Or to include a wide range of points: slicingPnts  = np.arange(-0.175,0.175,0.05)
 
 # The first (initial state) and the last snapshots in the series to analyze: [0,-1] to include all snapshots
@@ -60,7 +54,6 @@ dataInterval = [0,-1]
 
 # Number of snapshots to skip in between; 1 to not skip
 skip = 1
-skip = 4
 
 # Cropping frame in code's length unit: [0,0] for no cropping
 cropFramex = [0,0]
