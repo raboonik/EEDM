@@ -18,9 +18,11 @@ from .. import utils
 from .. import context
 from .. import methods
 from .. import const
+from .. import decorators
 
 import settings
 
+@decorators.memoize
 def run(outDirec):
     # Import gamma, g, and mu0 for ease of use
     gamma = settings.gamma

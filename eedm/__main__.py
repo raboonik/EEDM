@@ -23,26 +23,31 @@
             │   │   │   ├── __init__.py
             │   │   │   ├── domainDecomposeND.py
             │   │   │   ├── funcs.py
-            │   │   │   └── mpi4pyFuncs.py
-            │   ├── io/
-            │   │   ├── __init__.py
-            │   │   ├── reader.py
-            │   │   └── larexd/
-            │   │       ├── __init__.py
-            │   │       ├── read_lare_cfd2d.py
-            │   │       └── read_lare_cfd3d.py
+            │   │   │   └── mpi.py
             │   ├── core/
             │   │   ├── __init__.py
             │   │   ├── EEDM_eq6.py
             │   │   ├── EEDM_eq9.py
+            │   ├── io/
+            │   │   ├── __init__.py
+            │   │   ├── reader.py
+            │   │   ├── extensionLoader.py
+            │   │   └── larexd/
+            │   │       ├── __init__.py
+            │   │       ├── lare.py
+            │   │       ├── read_lare_cfd2d.py
+            │   │       └── read_lare_cfd3d.py
             │   ├── methods/
             │   │   ├── __init__.py
-            │   │   ├── differentiation.py
-            │   ├── funcs/
+            │   │   ├── diff.py
+            │   ├── utils/
             │   │   ├── __init__.py
-            │   │   ├── eigenDecompFuncs.py
+            │   │   ├── crop.py
+            │   │   ├── filter.py
             │   │   ├── get_energy_sliced.py
-            │   ├── prerequisites.py
+            │   ├── context.py
+            │   ├── system.py
+            │   ├── decorators.py
             │   └── SI_constants.py
             └── settings.py
 '''
@@ -55,10 +60,13 @@ import mpi4py
 from . import system
 from . import const
 from . import context
+from . import decorators 
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import settings
 
+@decorators.log_call
+@decorators.timeit
 def main():
     if not settings.dimensional: const.mu0  = 1
     

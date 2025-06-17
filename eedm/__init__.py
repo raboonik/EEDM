@@ -18,8 +18,10 @@ from . import utils
 from .io import larexd
 
 # Common utilities
+from . import context
 from . import system
 from . import SI_constants as const
+from . import decorators
 
 # Define public API for external users
 __all__ = [
@@ -27,5 +29,5 @@ __all__ = [
     "io", "larexd",
     "methods", 
     "utils",
-    "system", "const",
+    "context", "system", "const", "decorators",
 ]
