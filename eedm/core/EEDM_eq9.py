@@ -21,6 +21,7 @@ except ImportError:
 from .. import context
 from .. import utils
 from .. import system
+from .. import APP
 from .. import decorators
 
 import settings
