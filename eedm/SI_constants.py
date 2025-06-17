@@ -10,3 +10,6 @@ cLight = 299792458
 
 # For larexd
 mf     = 1.25
+
+# For memory handling
+gig     = 1024**3

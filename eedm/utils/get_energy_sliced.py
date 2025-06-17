@@ -1,6 +1,3 @@
-from libs import prerequisites as pre
-import numpy as np
-
 '''
     Author: Axel Raboonik
     Email : raboonik@gmail.com
@@ -12,6 +9,8 @@ import numpy as np
     Description: Functions to aid in working out the 2D slices used in the
                  computation of Equation 9
 '''
+
+import numpy as np
 
 def get_slice_2d(axis, nq0, xc,yc,zc,localOutpath, slq1=0, elq1=0, slq2=0, elq2=0):
     nx = len(xc)

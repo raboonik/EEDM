@@ -1,0 +1,3 @@
+[console_scripts]
+eedm = eedm.__main__:main
+
