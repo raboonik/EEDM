@@ -19,18 +19,26 @@
 import numpy as np
 from eedm import SI_constants as const
 
+# MHD simulation code: options:
+#   1. lare
+#   2. mancha (use mancha_0 if the background state is zero)
 simCode   = "lare"
-dataExt   = "cfd" # sdf or cfd
-datapath  = "/home/user/simulationDir/"
+
+# Data extension
+dataExt   = "sdf" # sdf, cfd, or h5 (mancha only takes h5 files)
+
+# Data directory
+datapath  = "/path/to/simulation/data/"
 
 # Data dimensionality (True: dimensional, False: non-dimensional)
-dimensional = False
+dimensional = True
 
 # Simulation dimensions
 dim = 3
 
-# # Gravitational acceleration along -z in your code's units: MAKE SURE "g" IS INDEED A CONSTANT IN THE SIMULATION
-g = 274 * 1.5e5 * const.mf * const.mh / 5778. / const.kb
+# Gravitational acceleration along -z in your code's units: MAKE SURE "g" IS INDEED A CONSTANT IN THE SIMULATION
+# g = 274 * 1.5e5 * const.mf * const.mh / 5778. / const.kb
+g = 274
 
 gamma = 5/3
 
@@ -55,10 +63,18 @@ dataInterval = [0,-1]
 # Number of snapshots to skip in between; 1 to not skip
 skip = 1
 
+# Switch to save the characteristic speeds and predecomposed energies
+saveSpeeds       = True
+savePredecompE   = True
+
+# Switch to save the DivB and the polytropic coefficient (k)
+saveDivB      = False
+savePolytropK = False
+
 # Cropping frame in code's length unit: [0,0] for no cropping
 cropFramex = [0,0]
 cropFramey = [0,0]
 cropFramez = [0,0]
 
 # Switch to compute the error term from paper II, unimportant for most purposes as long as DivB is sufficiently small
-divBCond = False
+saveDivBErr = False

@@ -15,37 +15,38 @@ import h5py
 
 from .. import io
 from .. import utils
-from .. import context
+from .. import context as ct
 from .. import methods
 from .. import const
 from .. import decorators
 
-import settings
+import settings as set
+
 
 @decorators.memoize
-def run(outDirec):
+def run(dirDict):
     # Import gamma, g, and mu0 for ease of use
-    gamma = settings.gamma
-    g     = settings.g
+    gamma = set.gamma
+    g     = set.g
     mu0   = const.mu0
     
     # IniInitialize the reading of the simulation data
     readObj = io.reader.EEDM_reader()
     
     # Initial parallelization scheme based on the number of snapshots
-    slt = int(context.rank       * readObj.nt / context.size)
-    elt = int((context.rank + 1) * readObj.nt / context.size)
+    slt = int(ct.rank       * readObj.nt / ct.size)
+    elt = int((ct.rank + 1) * readObj.nt / ct.size)
     
-    if context.rank == 0:
-        split_sizes = np.zeros(context.size,'int')
+    if ct.rank == 0:
+        split_sizes = np.zeros(ct.size,'int')
     else:
         split_sizes = None
     
-    context.comm.Gather(sendbuf=np.array(elt - slt,dtype='int'), recvbuf=split_sizes, root=0)
-    split_sizes = context.comm.bcast(split_sizes,root=0)
+    ct.comm.Gather(sendbuf=np.array(elt - slt,dtype='int'), recvbuf=split_sizes, root=0)
+    split_sizes = ct.comm.bcast(split_sizes,root=0)
     
     # Get the filenames
-    filenames = [readObj.feed[i].replace(settings.datapath, '') for i in range(slt,elt)]
+    filenames = [readObj.feed[i].replace(set.datapath, '') for i in range(slt,elt)]
     
     # Compute the eigenenergy time derivatives (Equations 6 of Paper III)
     for i in range(slt,elt):
@@ -53,54 +54,53 @@ def run(outDirec):
         rho, vx, vy, vz, bx, by, bz, p = readObj.data(i)
         time                           = readObj.time
         
-        print("rank = ", context.rank, " Reading", filename)
+        print("rank = ", ct.rank, " Reading", filename + ", simulation time = ", time)
         
         # Compute vsq and save for later
         vsq = vx**2 + vy**2 + vz**2
         
-        # Save the kinetic, magnetic, internal, and gravitational energies
-        hdfEtot =  h5py.File(outDirec + "Etot_" + filename[0:-4] + ".h5", 'w')
-        
-        hdfEtot.create_dataset('Kin', data=np.array(0.5 * rho * vsq                    , dtype='float64'), compression='gzip', compression_opts=9) 
-        hdfEtot.create_dataset('Mag', data=np.array(0.5 * (bx**2 + by**2 + bz**2) / mu0, dtype='float64'), compression='gzip', compression_opts=9) 
-        hdfEtot.create_dataset('Int', data=np.array(p / (gamma - 1)                    , dtype='float64'), compression='gzip', compression_opts=9) 
-        if g == 0:
-            hdfEtot.create_dataset('Grv', data=np.array([0]                 ,dtype='float64'), compression='gzip', compression_opts=9) 
-        else:
-            hdfEtot.create_dataset('Grv', data=np.array(rho * g * readObj.zc,dtype='float64'), compression='gzip', compression_opts=9) 
-        
-        # Save the grid and parameters in onlt the first Etot file
-        hdfEtot.attrs['g'] = g
-        if i == 0:
-            hdfEtot.create_dataset('xc',     data=np.array(readObj.xc    ,dtype='float64'), compression='gzip', compression_opts=9)
-            hdfEtot.create_dataset('yc',     data=np.array(readObj.yc    ,dtype='float64'), compression='gzip', compression_opts=9)
-            hdfEtot.create_dataset('zc',     data=np.array(readObj.zc    ,dtype='float64'), compression='gzip', compression_opts=9)
-            hdfEtot.create_dataset('xb',     data=np.array(readObj.xb    ,dtype='float64'), compression='gzip', compression_opts=9)
-            hdfEtot.create_dataset('yb',     data=np.array(readObj.yb    ,dtype='float64'), compression='gzip', compression_opts=9)
-            hdfEtot.create_dataset('zb',     data=np.array(readObj.zb    ,dtype='float64'), compression='gzip', compression_opts=9)
-            hdfEtot.create_dataset('frameb', data=np.array(readObj.frameb,dtype='float64'), compression='gzip', compression_opts=9)
-            hdfEtot.create_dataset('framec', data=np.array(readObj.framec,dtype='float64'), compression='gzip', compression_opts=9)
+        if ct.EnCond:
+            # Save the kinetic, magnetic, internal, and gravitational energies
+            hdfEtot =  h5py.File(dirDict["energy"] + "Etot_" + filename[0:-4] + ".h5", 'w')
             
-            hdfEtot.attrs['mode']     = settings.mode
-            hdfEtot.attrs['divBCond'] = settings.divBCond
-            hdfEtot.attrs['gamma'   ] = gamma
+            hdfEtot.create_dataset('Kin', data=np.array(0.5 * rho * vsq                    , dtype='float64'), compression='gzip', compression_opts=9) 
+            hdfEtot.create_dataset('Mag', data=np.array(0.5 * (bx**2 + by**2 + bz**2) / mu0, dtype='float64'), compression='gzip', compression_opts=9) 
+            hdfEtot.create_dataset('Int', data=np.array(p / (gamma - 1)                    , dtype='float64'), compression='gzip', compression_opts=9) 
+            if g == 0:
+                hdfEtot.create_dataset('Grv', data=np.array([0]                 ,dtype='float64'), compression='gzip', compression_opts=9) 
+            else:
+                hdfEtot.create_dataset('Grv', data=np.array(rho * g * readObj.zc,dtype='float64'), compression='gzip', compression_opts=9)
+            
+            hdfEtot.close()
         
-        # Compute the sound speed
-        c   = np.sqrt(gamma * p / rho)
         
-        # Compute and save the polytropic k, where dk/dt|_Lagrangian = 0
-        poly_k                          = p / rho**gamma
-        hdfEtot.attrs['maxAbsEntropy' ] = np.max( np.abs(poly_k))
-        hdfEtot.attrs['meanAbsEntropy'] = np.mean(np.abs(poly_k))
-        hdfEtot.attrs['stdAbsEntropy' ] = np.std( np.abs(poly_k))
-        del(poly_k)
+        # Save the grid and parameters in a single file
+        
+        if i == 0:
+            hdfParam =  h5py.File(dirDict["parent"] + "grid_params.h5", 'w')
+            hdfParam.create_dataset('xc',     data=np.array(readObj.xc    ,dtype='float64'), compression='gzip', compression_opts=9)
+            hdfParam.create_dataset('yc',     data=np.array(readObj.yc    ,dtype='float64'), compression='gzip', compression_opts=9)
+            hdfParam.create_dataset('zc',     data=np.array(readObj.zc    ,dtype='float64'), compression='gzip', compression_opts=9)
+            hdfParam.create_dataset('framec', data=np.array(readObj.framec,dtype='float64'), compression='gzip', compression_opts=9)
+            if not np.any(readObj.xb == None):
+                hdfParam.create_dataset('frameb', data=np.array(readObj.frameb,dtype='float64'), compression='gzip', compression_opts=9)
+                hdfParam.create_dataset('xb',     data=np.array(readObj.xb    ,dtype='float64'), compression='gzip', compression_opts=9)
+                hdfParam.create_dataset('yb',     data=np.array(readObj.yb    ,dtype='float64'), compression='gzip', compression_opts=9)
+                hdfParam.create_dataset('zb',     data=np.array(readObj.zb    ,dtype='float64'), compression='gzip', compression_opts=9)
+            
+            hdfParam.attrs['mode']     = set.mode
+            hdfParam.attrs['gamma'   ] = gamma
+            hdfParam.attrs['mu0'     ] = mu0
+            hdfParam.attrs['g']        = g
+            hdfParam.attrs['gCond']    = g > 0
+            hdfParam.close()
         
         # Let's roughly keep track of how much memory we're using
         mem = sys.getsizeof(readObj) / const.gig
-        mem = mem + (sys.getsizeof(vx)+sys.getsizeof(vy)+sys.getsizeof(vz)+
-                    sys.getsizeof(bx)+sys.getsizeof(by)+sys.getsizeof(bz)+
-                    sys.getsizeof(rho)+sys.getsizeof(c)+sys.getsizeof(vsq)) / const.gig
-        print("rank = ", context.rank, " Memory used before computing the derivatives = ", mem, " Gb")
+        mem = mem + (sys.getsizeof(vx )+sys.getsizeof(vy)+sys.getsizeof(vz)+
+                     sys.getsizeof(bx )+sys.getsizeof(by)+sys.getsizeof(bz)+
+                     sys.getsizeof(rho)+sys.getsizeof(vsq)) / const.gig
+        print("rank = ", ct.rank, " Memory used before computing the derivatives = ", mem, " Gb\n")
         
         # Compute the field derivatives
         BxDx = methods.diff.partial(bx,0,readObj.xc)
@@ -124,20 +124,41 @@ def run(outDirec):
                     sys.getsizeof(ax)+sys.getsizeof(ay)+sys.getsizeof(az)+
                     -(sys.getsizeof(bx)+sys.getsizeof(by)+sys.getsizeof(bz))+
                     sys.getsizeof(sqmurho)) / const.gig
-        print("rank = ", context.rank, " Memory used before computing the characteristic speeds = ", mem, " Gb")
+        print("rank = ", ct.rank, " Memory used before computing the characteristic speeds = ", mem, " Gb\n")
         
         # No longer need B
         del(bx,
             by,
             bz)
         
-        # Save maxDivB
-        divB                         = BxDx + ByDy + BzDz
-        hdfEtot.attrs['maxAbsDivB' ] = np.max(np.abs(divB))
-        hdfEtot.attrs['meanAbsDivB'] = np.mean(np.abs(divB))
-        hdfEtot.attrs['stdAbsDivB' ] = np.std(np.abs(divB))
-        hdfEtot.close()
-        del(divB)
+        # If necessary, compute and save divB and the polytropic k, where dk/dt|_Lagrangian = 0
+        if ct.DbCond or ct.PkCond: 
+            hdfExtra =  h5py.File(dirDict["extra"] + "Extras_"+filename[0:-4] + ".h5", 'w')
+        
+        if ct.PkCond:
+            poly_k                           = p / rho**gamma            
+            hdfExtra.create_dataset('poly_k', data=np.array(poly_k,dtype='float64'), compression='gzip', compression_opts=9)
+            hdfExtra.attrs['maxAbsEntropy' ] = np.max( np.abs(poly_k))
+            hdfExtra.attrs['meanAbsEntropy'] = np.mean(np.abs(poly_k))
+            hdfExtra.attrs['stdAbsEntropy' ] = np.std( np.abs(poly_k))
+            del(poly_k)
+        
+        if ct.DbCond:
+            divB                          = BxDx + ByDy + BzDz
+            hdfExtra.create_dataset('divB', data=np.array(divB,dtype='float64'), compression='gzip', compression_opts=9)
+            hdfExtra.attrs['maxAbsDivB' ] = np.max(np.abs(divB))
+            hdfExtra.attrs['meanAbsDivB'] = np.mean(np.abs(divB))
+            hdfExtra.attrs['stdAbsDivB' ] = np.std(np.abs(divB))
+            del(divB)
+        
+        if ct.DbCond or ct.PkCond: 
+            hdfExtra.close()
+        
+        
+        # Compute the characteristic speeds
+        
+        # Sound speed
+        c   = np.sqrt(gamma * p / rho)
         
         a2c2 = ax**2 + ay**2 + az**2 + c**2 # = csq**2 + cfq**2
         
@@ -177,61 +198,58 @@ def run(outDirec):
         
         del(a2c2)
         
-        mem = mem + (sys.getsizeof(csx)+sys.getsizeof(csy)+sys.getsizeof(csz)+
-                    sys.getsizeof(cfx)+sys.getsizeof(cfy)+sys.getsizeof(cfz)) / const.gig
-        print("rank = ", context.rank, " Memory used after speeds = ", mem, " Gb")
+        mem = mem + (sys.getsizeof(csx)+sys.getsizeof(csy)+sys.getsizeof(csz) +
+                     sys.getsizeof(cfx)+sys.getsizeof(cfy)+sys.getsizeof(cfz) +
+                     sys.getsizeof(c)) / const.gig
+        print("rank = ", ct.rank, " Memory used after speeds = ", mem, " Gb\n")
+        
+        # Save the characteristic speeds if necessary
+        if ct.SpCond:
+            hdfVel = h5py.File(dirDict["speed"] + "Speed_" + filename[0:-4] + ".h5", 'w')
+            hdfVel.create_dataset('ax' , data=np.array(ax ,dtype='float64'), compression='gzip', compression_opts=9)
+            hdfVel.create_dataset('ay' , data=np.array(ay ,dtype='float64'), compression='gzip', compression_opts=9)
+            hdfVel.create_dataset('az' , data=np.array(az ,dtype='float64'), compression='gzip', compression_opts=9)
+            hdfVel.create_dataset('csx', data=np.array(csx,dtype='float64'), compression='gzip', compression_opts=9)
+            hdfVel.create_dataset('csy', data=np.array(csy,dtype='float64'), compression='gzip', compression_opts=9)
+            hdfVel.create_dataset('csz', data=np.array(csz,dtype='float64'), compression='gzip', compression_opts=9)
+            hdfVel.create_dataset('cfx', data=np.array(cfx,dtype='float64'), compression='gzip', compression_opts=9)
+            hdfVel.create_dataset('cfy', data=np.array(cfy,dtype='float64'), compression='gzip', compression_opts=9)
+            hdfVel.create_dataset('cfz', data=np.array(cfz,dtype='float64'), compression='gzip', compression_opts=9)
+            hdfVel.close()
+        
         
         #**********************************************************************************************************
-        # Save the characteristic speeds
-        hdfVel = h5py.File(outDirec + "Speed_" + filename[0:-4] + ".h5", 'w')
-        
-        hdfVel.attrs['gCond']           = False
-        if g > 0: hdfVel.attrs['gCond'] = True
-        
-        hdfVel.create_dataset('ax' , data=np.array(ax ,dtype='float64'), compression='gzip', compression_opts=9)
-        hdfVel.create_dataset('ay' , data=np.array(ay ,dtype='float64'), compression='gzip', compression_opts=9)
-        hdfVel.create_dataset('az' , data=np.array(az ,dtype='float64'), compression='gzip', compression_opts=9)
-        hdfVel.create_dataset('csx', data=np.array(csx,dtype='float64'), compression='gzip', compression_opts=9)
-        hdfVel.create_dataset('csy', data=np.array(csy,dtype='float64'), compression='gzip', compression_opts=9)
-        hdfVel.create_dataset('csz', data=np.array(csz,dtype='float64'), compression='gzip', compression_opts=9)
-        hdfVel.create_dataset('cfx', data=np.array(cfx,dtype='float64'), compression='gzip', compression_opts=9)
-        hdfVel.create_dataset('cfy', data=np.array(cfy,dtype='float64'), compression='gzip', compression_opts=9)
-        hdfVel.create_dataset('cfz', data=np.array(cfz,dtype='float64'), compression='gzip', compression_opts=9)
-        hdfVel.close()
+        if ct.rank == ct.mainrank: print("Computing the Eigenenergy time derivatives...\n")
         
         # DivB: m = 1
         divx = -(((ax * BxDx * vx) * sqmurho) / mu0)
         divy = -(((ay * ByDy * vy) * sqmurho) / mu0)
         divz = -(((az * BzDz * vz) * sqmurho) / mu0)
         
-        # Compute the divB error term according to Paper II if requested by user
-        if settings.divBCond: div1 = ((ax * vx + ay * vy + az * vz) * (BxDx + ByDy + BzDz) * sqmurho) / mu0
+        # Save the divB eigenenergy time derivatives
+        hdfnew = h5py.File(dirDict["eq6"]+"EigenenergyDDT_"+filename[0:-4]+'.h5', 'w')
+        hdfnew.create_dataset('eq6_m1_x', data=np.array(divx,dtype='float64'), compression='gzip', compression_opts=9)
+        hdfnew.create_dataset('eq6_m1_y', data=np.array(divy,dtype='float64'), compression='gzip', compression_opts=9)
+        hdfnew.create_dataset('eq6_m1_z', data=np.array(divz,dtype='float64'), compression='gzip', compression_opts=9)
         
-        # Update the used memory
+        del(divx,
+        divy,
+        divz)
+        
+        # If requested, compute and save the divB error term according to Paper II if requested by user
+        if ct.ErCond:
+            div1 = ((ax * vx + ay * vy + az * vz) * (BxDx + ByDy + BzDz) * sqmurho) / mu0
+            hdfnew.create_dataset('eq6_m1_err', data=np.array(div1,dtype='float64'), compression='gzip', compression_opts=9)
+            del(div1)
+        
+        # No longer need BqDq; update the used memory
         mem  = mem - (sys.getsizeof(BxDx)+sys.getsizeof(ByDy)+sys.getsizeof(BzDz)) / const.gig
         del(BxDx, 
             ByDy,
             BzDz)
         
-        #**********************************************************************************************************
-        # Save the divB eigenenergy time derivatives
-        hdfnew = h5py.File(outDirec+"EigenenergyDDT_"+filename[0:-4]+'.h5', 'w')
-        
-        hdfnew.create_dataset('eq6_m1_x', data=np.array(divx,dtype='float64'), compression='gzip', compression_opts=9)
-        hdfnew.create_dataset('eq6_m1_y', data=np.array(divy,dtype='float64'), compression='gzip', compression_opts=9)
-        hdfnew.create_dataset('eq6_m1_z', data=np.array(divz,dtype='float64'), compression='gzip', compression_opts=9)
-        
-        if settings.divBCond:
-            hdfnew.create_dataset('eq6_m1_err', data=np.array(div1,dtype='float64'), compression='gzip', compression_opts=9)
-            del(div1)
-        
         # Save the time
         hdfnew.attrs['time'] = time
-        
-        del(divx,
-            divy,
-            divz)
-        
         
         # Ent and gravity PA modes: m = 2 and 9: currently the code can only handle constant gravity along -z 
         pDx  = methods.diff.partial(p,0,readObj.xc)
@@ -246,8 +264,8 @@ def run(outDirec):
         
         # Update the used memory
         mem = mem + (sys.getsizeof(pDx)   + sys.getsizeof(pDy)   + sys.getsizeof(pDz) +
-                    sys.getsizeof(rhoDx) + sys.getsizeof(rhoDy) + sys.getsizeof(rhoDz)) / const.gig
-        print("rank = ", context.rank, " Memory used after pDq and rhoDq just before Ent = ", mem, " Gb")
+                     sys.getsizeof(rhoDx) + sys.getsizeof(rhoDy) + sys.getsizeof(rhoDz)) / const.gig
+        print("rank = ", ct.rank, " Memory used after pDq and rhoDq just before Ent = ", mem, " Gb\n")
         
         Entx = vsq * (vx * (pDx - c**2 * rhoDx)) / 2 / c**2
         Enty = vsq * (vy * (pDy - c**2 * rhoDy)) / 2 / c**2
@@ -294,7 +312,7 @@ def run(outDirec):
                     sys.getsizeof(vyDx)+sys.getsizeof(vyDy)+sys.getsizeof(vyDz)  +
                     sys.getsizeof(vzDx)+sys.getsizeof(vzDy)+sys.getsizeof(vzDz)) / const.gig
         
-        print("rank = ", context.rank, " Memory used before computing the Alfven eigenenergy time derivatives = ", mem, " Gb")
+        print("rank = ", ct.rank, " Memory used before computing the Alfven eigenenergy time derivatives = ", mem, " Gb\n")
         
         sx = np.sign(ax)
         
@@ -308,7 +326,7 @@ def run(outDirec):
         hdfnew.create_dataset('eq6_m4_x', data=np.array(alfx2,dtype='float64'), compression='gzip', compression_opts=9)
         del(alfx2)
         
-        print("rank = ", context.rank, " Memory used after Alfven = ", mem, " Gb")
+        print("rank = ", ct.rank, " Memory used after Alfven = ", mem, " Gb\n")
         
         # Compute the alpha variables in the x-direction
         alphasx = (cfx**2 - c**2)/(cfx**2 - csx**2)
@@ -320,7 +338,7 @@ def run(outDirec):
             if -np.min(alphasx[mask]) > 10**-10:
                 print("•••••••••••••••• Warning! alphasx has negative elements bigger than 10**-10. We had np.min(alphasx[mask]) = ",np.min(alphasx[mask]))
             
-            print("This should not be happening for an ideal plasma. Check your simulation. Setting the negative elements of alphasx to zero!")
+            print("This should not be happening for an ideal plasma. Check your simulation. Setting the negative elements of alphasx to zero!\n")
             alphasx[mask] = 0
 
         mask = alphafx < 0
@@ -328,7 +346,7 @@ def run(outDirec):
             if -np.min(alphafx[mask]) > 10**-10:
                 print("•••••••••••••••• Warning! alphafx has negative elements bigger than 10**-10. We had np.min(alphafx[mask]) = ",np.min(alphafx[mask]))
             
-            print("This should not be happening for an ideal plasma. Check your simulation. Setting the negative elements of alphafx to zero!")
+            print("This should not be happening for an ideal plasma. Check your simulation. Setting the negative elements of alphafx to zero!\n")
             alphafx[mask] = 0
 
 
@@ -357,16 +375,16 @@ def run(outDirec):
                     np.sqrt(ay**2 + az**2)*csx*vxDx*alphasx*rho*sqmurho + cfx*(ay*vyDx + az*vzDx)*alphafx*rho*sqmurho*sx))/(np.sqrt(ay**2 + az**2)*c**2*sqmurho))
         
         mem = mem + (sys.getsizeof(slowx1) + sys.getsizeof(slowx2)) / const.gig
-        print("rank = ", context.rank, " Memory used after computing the x-directed slow mode terms = ", mem, " Gb")
+        print("rank = ", ct.rank, " Memory used after computing the x-directed slow mode terms = ", mem, " Gb\n")
         
         if waveCond: 
             slowx1[maskWaveField] = 0.
             slowx2[maskWaveField] = 0.
         
-        if settings.mode == "XYZUpDownSeparated":
+        if set.mode == "XYZUpDownSeparated":
             hdfnew.create_dataset('eq6_m5_x', data=np.array(slowx1,dtype='float64'), compression='gzip', compression_opts=9)
             hdfnew.create_dataset('eq6_m6_x', data=np.array(slowx2,dtype='float64'), compression='gzip', compression_opts=9)
-        elif settings.mode == "UpDownCombined":
+        elif set.mode == "UpDownCombined":
             hdfnew.create_dataset('eq6_m5and6_x', data=np.array(slowx1 + slowx2,dtype='float64'), compression='gzip', compression_opts=9)
         
         del(slowx1, 
@@ -400,10 +418,10 @@ def run(outDirec):
             fastx1[maskWaveField] = 0.
             fastx2[maskWaveField] = 0.
         
-        if settings.mode == "XYZUpDownSeparated":
+        if set.mode == "XYZUpDownSeparated":
             hdfnew.create_dataset('eq6_m7_x', data=np.array(fastx1,dtype='float64'), compression='gzip', compression_opts=9)
             hdfnew.create_dataset('eq6_m8_x', data=np.array(fastx2,dtype='float64'), compression='gzip', compression_opts=9)
-        elif settings.mode == "UpDownCombined":
+        elif set.mode == "UpDownCombined":
             hdfnew.create_dataset('eq6_m7and8_x', data=np.array(fastx1 + fastx2,dtype='float64'), compression='gzip', compression_opts=9)
         
         del(fastx1, 
@@ -412,7 +430,7 @@ def run(outDirec):
         # If the allocated memory can handle the program up to this point then the rest will be fine
         mem = mem - sys.getsizeof(pDx) / const.gig
         del(pDx)
-        print("rank = ", context.rank, " Last memory check: memory used = ", mem, " Gb")
+        print("rank = ", ct.rank, " Last memory check: memory used = ", mem, " Gb\n")
         
         alphasy = (cfy**2 - c**2)/(cfy**2 - csy**2)
         alphafy = (c**2 - csy**2)/(cfy**2 - csy**2)
@@ -423,7 +441,7 @@ def run(outDirec):
             if -np.min(alphasy[mask]) > 10**-10:
                 print("•••••••••••••••• Warning! alphasy has negative elements bigger than 10**-10. We had np.min(alphasy[mask]) = ",np.min(alphasy[mask]))
             
-            print("This should not be happening for an ideal plasma. Check your simulation. Setting the negative elements of alphasy to zero!")
+            print("This should not be happening for an ideal plasma. Check your simulation. Setting the negative elements of alphasy to zero!\n")
             alphasy[mask] = 0
 
         mask = alphafy < 0
@@ -431,7 +449,7 @@ def run(outDirec):
             if -np.min(alphafy[mask]) > 10**-10:
                 print("•••••••••••••••• Warning! alphafy has negative elements bigger than 10**-10. We had np.min(alphafy[mask]) = ",np.min(alphafy[mask]))
             
-            print("This should not be happening for an ideal plasma. Check your simulation. Setting the negative elements of alphafy to zero!")
+            print("This should not be happening for an ideal plasma. Check your simulation. Setting the negative elements of alphafy to zero!\n")
             alphafy[mask] = 0
 
 
@@ -471,10 +489,10 @@ def run(outDirec):
             slowy1[maskWaveField] = 0.
             slowy2[maskWaveField] = 0.
         
-        if settings.mode == "XYZUpDownSeparated":
+        if set.mode == "XYZUpDownSeparated":
             hdfnew.create_dataset('eq6_m5_y', data=np.array(slowy1,dtype='float64'), compression='gzip', compression_opts=9)
             hdfnew.create_dataset('eq6_m6_y', data=np.array(slowy2,dtype='float64'), compression='gzip', compression_opts=9)
-        elif settings.mode == "UpDownCombined":
+        elif set.mode == "UpDownCombined":
             hdfnew.create_dataset('eq6_m5and6_y', data=np.array(slowy1 + slowy2,dtype='float64'), compression='gzip', compression_opts=9)
         
         del(slowy1, 
@@ -507,10 +525,10 @@ def run(outDirec):
             fasty1[maskWaveField] = 0.
             fasty2[maskWaveField] = 0.
         
-        if settings.mode == "XYZUpDownSeparated":
+        if set.mode == "XYZUpDownSeparated":
             hdfnew.create_dataset('eq6_m7_y', data=np.array(fasty1,dtype='float64'), compression='gzip', compression_opts=9)
             hdfnew.create_dataset('eq6_m8_y', data=np.array(fasty2,dtype='float64'), compression='gzip', compression_opts=9)
-        elif settings.mode == "UpDownCombined":
+        elif set.mode == "UpDownCombined":
             hdfnew.create_dataset('eq6_m7and8_y', data=np.array(fasty1 + fasty2,dtype='float64'), compression='gzip', compression_opts=9)
         
         del(fasty1, 
@@ -526,7 +544,7 @@ def run(outDirec):
             if -np.min(alphasz[mask]) > 10**-10:
                 print("•••••••••••••••• Warning! alphasz has negative elements bigger than 10**-10. We had np.min(alphasz[mask]) = ",np.min(alphasz[mask]))
             
-            print("This should not be happening for an ideal plasma. Check your simulation. Setting the negative elements of alphasz to zero!")
+            print("This should not be happening for an ideal plasma. Check your simulation. Setting the negative elements of alphasz to zero!\n")
             alphasz[mask] = 0
 
         mask = alphafz < 0
@@ -534,7 +552,7 @@ def run(outDirec):
             if -np.min(alphafz[mask]) > 10**-10:
                 print("•••••••••••••••• Warning! alphafz has negative elements bigger than 10**-10. We had np.min(alphafz[mask]) = ",np.min(alphafz[mask]))
             
-            print("This should not be happening for an ideal plasma. Check your simulation. Setting the negative elements of alphafz to zero!")
+            print("This should not be happening for an ideal plasma. Check your simulation. Setting the negative elements of alphafz to zero!\n")
             alphafz[mask] = 0
 
 
@@ -574,10 +592,10 @@ def run(outDirec):
             slowz1[maskWaveField] = 0.
             slowz2[maskWaveField] = 0.
         
-        if settings.mode == "XYZUpDownSeparated":
+        if set.mode == "XYZUpDownSeparated":
             hdfnew.create_dataset('eq6_m5_z', data=np.array(slowz1,dtype='float64'), compression='gzip', compression_opts=9)
             hdfnew.create_dataset('eq6_m6_z', data=np.array(slowz2,dtype='float64'), compression='gzip', compression_opts=9)
-        elif settings.mode == "UpDownCombined":
+        elif set.mode == "UpDownCombined":
             hdfnew.create_dataset('eq6_m5and6_z', data=np.array(slowz1 + slowz2,dtype='float64'), compression='gzip', compression_opts=9)
         
         del(slowz1, 
@@ -612,10 +630,10 @@ def run(outDirec):
             fastz1[maskWaveField] = 0.
             fastz2[maskWaveField] = 0.
         
-        if settings.mode == "XYZUpDownSeparated":
+        if set.mode == "XYZUpDownSeparated":
             hdfnew.create_dataset('eq6_m7_z', data=np.array(fastz1,dtype='float64'), compression='gzip', compression_opts=9)
             hdfnew.create_dataset('eq6_m8_z', data=np.array(fastz2,dtype='float64'), compression='gzip', compression_opts=9)
-        elif settings.mode == "UpDownCombined":
+        elif set.mode == "UpDownCombined":
             hdfnew.create_dataset('eq6_m7and8_z', data=np.array(fastz1 + fastz2,dtype='float64'), compression='gzip', compression_opts=9)
         
         del(fastz1, 
@@ -651,5 +669,5 @@ def run(outDirec):
             cfz    ,
             maskWaveField)
 
-    if context.rank == context.rank:
-        print("Equations 6 computed and saved in " + outDirec + ".")
+    if ct.rank == ct.mainrank:
+        print("Equations 6 computed and saved in " + dirDict["eq6"] + ".\n")

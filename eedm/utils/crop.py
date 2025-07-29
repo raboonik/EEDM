@@ -1,6 +1,6 @@
 import numpy as np
 
-def getCropIndecies3D(obj, framexb, frameyb, framezb):
+def getCropIndecies3D_lare(obj, framexb, frameyb, framezb):
     frameb = np.zeros(6, int)
     framec = np.zeros(6, int)
     
@@ -73,4 +73,37 @@ def getCropIndecies3D(obj, framexb, frameyb, framezb):
     else:
         framec[4:] = [0,zc.shape[0]+1]
     
-    return xb, yb, zb, xc, yc, zc, frameb, framec
+    return xb, yb, zb, frameb, xc, yc, zc, framec
+
+
+def getCropIndecies3D_cc(obj, framexc, frameyc, framezc):
+    framec = np.zeros(6, int)
+    
+    xc  = obj.xc
+    yc  = obj.yc
+    zc  = obj.zc
+    
+    if np.sum(np.abs(framexc)) > 0:
+        idx0 = (np.abs(xc-framexc[0]) ).argmin()
+        idx1 = (np.abs(xc-framexc[-1])).argmin()
+        framec[0:2] = [idx0, idx1]
+    else:
+        framec[0:2] = [0, xc.shape[0]]
+    
+    if np.sum(np.abs(frameyc)) > 0:
+        idx0 = (np.abs(yc-frameyc[0]) ).argmin()
+        idx1 = (np.abs(yc-frameyc[-1])).argmin()
+        framec[2:4] = [idx0, idx1]
+    else:
+        framec[2:4] = [0, yc.shape[0]]
+    
+    if np.sum(np.abs(framezc)) > 0:
+        idx0 = (np.abs(zc-framezc[0]) ).argmin()
+        idx1 = (np.abs(zc-framezc[-1])).argmin()
+        framec[4:6] = [idx0, idx1]
+    else:
+        framec[4:6] = [0, xc.shape[0]]
+    
+    return xc, yc, zc, framec
+    
+    

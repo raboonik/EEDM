@@ -45,7 +45,7 @@
             │   │   ├── crop.py
             │   │   ├── filter.py
             │   │   ├── get_energy_sliced.py
-            │   ├── context.py
+            │   ├── ct.py
             │   ├── system.py
             │   ├── decorators.py
             │   └── SI_constants.py
@@ -55,53 +55,75 @@
 
 
 import os, sys
-import mpi4py
+from mpi4py import MPI
 
 from . import system
 from . import const
-from . import context
-from . import decorators 
+from . import context as ct
+from . import decorators
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import settings
+
+# Initialize parallelization
+#◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
+#      Init Parallel             #◈
+ct.comm     = MPI.COMM_WORLD     #◈
+ct.size     = ct.comm.Get_size() #◈
+ct.rank     = ct.comm.Get_rank() #◈
+#◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
 
 @decorators.log_call
 @decorators.timeit
 def main():
     if not settings.dimensional: const.mu0  = 1
     
-    #◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
-    #      Init Parallel                      #◈
-    context.comm     = mpi4py.MPI.COMM_WORLD  #◈
-    context.size     = context.comm.Get_size()#◈
-    context.rank     = context.comm.Get_rank()#◈
-    #◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
+    datapath    = system.add_slash(settings.datapath)
+    outDirecL1  = datapath   + 'EEDM_results/'
+    outDirecSp  = outDirecL1 + 'Char_Speeds/'
+    outDirecEn  = outDirecL1 + 'Predecomposition_Energies/'
+    outDirecEx  = outDirecL1 + 'Extras/'
     
-    datapath = system.add_slash(settings.datapath)
-    outDirec = datapath + 'EEDM_results/'
+    outDirecL2  = outDirecL1 + 'Decomposed_EigenEnergies/'
+    outDirecEq6 = outDirecL2 + 'PaperIII_Eq_6_3D/'
+    outDirecEq9 = outDirecL2 + 'PaperIII_Eq_9_2DSlabs/'
     
-    if context.rank == 0:
-        err = system.bash("cd " + outDirec)
-        if err != 0: system.bash("mkdir "+outDirec)
+    dirDict = {"parent": outDirecL1, "eq6": outDirecEq6, "eq9": outDirecEq9, "speed": outDirecSp, "energy": outDirecEn, "extra": outDirecEx}
     
+    # Create the output directories
+    if ct.rank == ct.mainrank:
+        # Level 1
+        system.create_dir(outDirecL1)
+        system.create_dir(outDirecL2)
+        
+        # Level 2
+        system.create_dir(outDirecEq6)
+        system.create_dir(outDirecEq9)
+        
+        # Conditional levels
+        if ct.SpCond             : system.create_dir(outDirecSp)
+        if ct.EnCond             : system.create_dir(outDirecEn)
+        if ct.DbCond or ct.PkCond: system.create_dir(outDirecEx)
     
-    if   settings.computationSwitch == "eq6": context.eq9Cond = False
-    elif settings.computationSwitch == "eq9": context.eq6Cond = False
+    ct.comm.barrier()
+    
+    if   settings.computationSwitch == "eq6": ct.eq9Cond = False
+    elif settings.computationSwitch == "eq9": ct.eq6Cond = False
     else: pass
     
-    if context.eq6Cond:
+    if ct.eq6Cond:
         from .core import EEDM_eq6
-        EEDM_eq6.run(outDirec)
+        EEDM_eq6.run(dirDict)
     
-    context.comm.barrier()
+    ct.comm.barrier()
     
-    if context.eq9Cond:
+    if ct.eq9Cond:
         from .core import EEDM_eq9
-        EEDM_eq9.run(outDirec)
+        EEDM_eq9.run(dirDict)
     
-    context.comm.barrier()
+    ct.comm.barrier()
     
-    if context.rank == context.mainrank: print("\nAll done!\n")
+    if ct.rank == ct.mainrank: print("\nAll done!\n")
 
 
 if __name__ == "__main__":

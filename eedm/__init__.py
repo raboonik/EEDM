@@ -16,6 +16,7 @@ from . import methods
 from . import utils
 
 from .io import larexd
+from .io import mancha
 
 # Common utilities
 from . import context
@@ -26,7 +27,7 @@ from . import decorators
 # Define public API for external users
 __all__ = [
     "APP",
-    "io", "larexd",
+    "io", "larexd", "mancha",
     "methods", 
     "utils",
     "context", "system", "const", "decorators",

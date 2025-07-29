@@ -17,7 +17,8 @@ def get_slice_2d(axis, nq0, xc,yc,zc,localOutpath, slq1=0, elq1=0, slq2=0, elq2=
     ny = len(yc)
     nz = len(zc)
     
-    if elq1 == 0:  # Assume the single-core version
+    # Assume the single-core version
+    if elq1 == 0:  
         if   axis == "xy":
             elq1 = nx
             elq2 = ny
@@ -28,10 +29,10 @@ def get_slice_2d(axis, nq0, xc,yc,zc,localOutpath, slq1=0, elq1=0, slq2=0, elq2=
             elq1 = ny
             elq2 = nz
     
-    nq0   = np.array(nq0)
+    nq0        = np.array(nq0)
     _, indexes = np.unique(nq0,return_index=True)
-    nq0   = nq0[np.sort(indexes)]
-    lenq0 = len(nq0)
+    nq0        = nq0[np.sort(indexes)]
+    lenq0      = len(nq0)
     
     if   axis == "xy":
         nq1   = nx
@@ -42,6 +43,9 @@ def get_slice_2d(axis, nq0, xc,yc,zc,localOutpath, slq1=0, elq1=0, slq2=0, elq2=
         if lenq0 > 0:
             if not isinstance(nq0[0],np.integer):
                 nq0  = [(np.abs(nq00 - zc)).argmin() for nq00 in nq0 if (nq00 >= zc[0] and nq00 <= zc[-1])]
+            
+            # Get the unique values
+            nq0 = list(dict.fromkeys(nq0))
         lenq         = len(nq0)
         nq1i         = [slq1 for i in range(lenq)]
         nq1f         = [elq1 for i in range(lenq)]
@@ -49,8 +53,8 @@ def get_slice_2d(axis, nq0, xc,yc,zc,localOutpath, slq1=0, elq1=0, slq2=0, elq2=
         nq2f         = [elq2 for i in range(lenq)]
         nq3i         = nq0
         nq3f         = [i+1 for i in nq0]
-        outfilename1 = [localOutpath+"all_plane_"+axis+"_nz0_"+str(nq0[i])+".h5" for i in range(lenq)]
-        outfilename2 = [localOutpath+"all_plane_"+axis+"_vars_nz0_"+str(nq0[0])+".h5" for i in range(lenq)]
+        outfilename1 = [localOutpath+"EE_Slab_"+axis+"_nz0_"+str(nq0[i])+".h5" for i in range(lenq)]
+        outfilename2 = [localOutpath+"EE_Slab_"+axis+"_vars_nz0_"+str(nq0[0])+".h5" for i in range(lenq)]
     elif axis == "xz":
         nq1  = nx
         nq2  = nz
@@ -60,6 +64,9 @@ def get_slice_2d(axis, nq0, xc,yc,zc,localOutpath, slq1=0, elq1=0, slq2=0, elq2=
         if lenq0 > 0:
             if not isinstance(nq0[0],np.integer):
                 nq0 = [(np.abs(nq00 - yc)).argmin() for nq00 in nq0 if (nq00 >= yc[0] and nq00 <= yc[-1])]
+            
+            # Get the unique values
+            nq0 = list(dict.fromkeys(nq0))
         lenq = len(nq0)
         nq1i = [slq1 for i in range(lenq)]
         nq1f = [elq1 for i in range(lenq)]
@@ -67,8 +74,8 @@ def get_slice_2d(axis, nq0, xc,yc,zc,localOutpath, slq1=0, elq1=0, slq2=0, elq2=
         nq2f = [i+1 for i in nq0]
         nq3i = [slq2 for i in range(lenq)]
         nq3f = [elq2 for i in range(lenq)]
-        outfilename1 = [localOutpath+"all_plane_"+axis+"_ny0_"+str(nq0[i])+".h5" for i in range(lenq)]
-        outfilename2 = [localOutpath+"all_plane_"+axis+"_vars_ny0_"+str(nq0[0])+".h5" for i in range(lenq)]
+        outfilename1 = [localOutpath+"EE_Slab_"+axis+"_ny0_"+str(nq0[i])+".h5" for i in range(lenq)]
+        outfilename2 = [localOutpath+"EE_Slab_"+axis+"_vars_ny0_"+str(nq0[0])+".h5" for i in range(lenq)]
     elif axis == "yz":
         nq1  = ny
         nq2  = nz
@@ -78,6 +85,9 @@ def get_slice_2d(axis, nq0, xc,yc,zc,localOutpath, slq1=0, elq1=0, slq2=0, elq2=
         if lenq0 > 0:
             if not isinstance(nq0[0],np.integer):
                 nq0 = [(np.abs(nq00 - xc)).argmin() for nq00 in nq0 if (nq00 >= xc[0] and nq00 <= xc[-1])]
+            
+            # Get the unique values
+            nq0 = list(dict.fromkeys(nq0))
         lenq = len(nq0)
         nq1i = nq0
         nq1f = [i+1 for i in nq0]
@@ -85,8 +95,8 @@ def get_slice_2d(axis, nq0, xc,yc,zc,localOutpath, slq1=0, elq1=0, slq2=0, elq2=
         nq2f = [elq1 for i in range(lenq)]
         nq3i = [slq2 for i in range(lenq)]
         nq3f = [elq2 for i in range(lenq)]
-        outfilename1 = [localOutpath+"all_plane_"+axis+"_nx0_"+str(nq0[i])+".h5" for i in range(lenq)]
-        outfilename2 = [localOutpath+"all_plane_"+axis+"_vars_nx0_"+str(nq0[0])+".h5" for i in range(lenq)]
+        outfilename1 = [localOutpath+"EE_Slab_"+axis+"_nx0_"+str(nq0[i])+".h5" for i in range(lenq)]
+        outfilename2 = [localOutpath+"EE_Slab_"+axis+"_vars_nx0_"+str(nq0[0])+".h5" for i in range(lenq)]
     else:
         raise ValueError("Specify a valid plane for the variable axis!")
     

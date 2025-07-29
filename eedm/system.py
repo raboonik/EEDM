@@ -13,13 +13,26 @@ import subprocess
 import glob
 import os
 
-def system_call(command):
-    p = subprocess.Popen([command], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-    out, err = p.communicate()
-    if len(err) > 5:
+def system_call(command,quiet=False):
+    if quiet:
+        p = subprocess.run([command], shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    else:
+        p = subprocess.run([command], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    
+    if p.returncode == 0:
         return 0
     else:
         return 1
+
+def create_dir(dir):
+    err = system_call("cd " + dir, quiet=True)
+    if err != 0:
+        print("Creating the directory: "+dir+"\n")
+        err = system_call("mkdir "+dir,quiet=True)
+    else:
+        print("Directory already exists: "+dir+"\n")
+    
+    return err
 
 def fid(path):
     return sorted(glob.glob(path))

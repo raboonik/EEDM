@@ -6,12 +6,14 @@
 import functools
 import time
 
+from . import context
+
 def log_call(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        print(f"[LOG] Calling {func.__name__}...")
+        if context.rank == context.mainrank: print(f"[LOG] Calling {func.__name__}...\n")
         result = func(*args, **kwargs)
-        print(f"[LOG] Finished {func.__name__}")
+        if context.rank == context.mainrank: print(f"[LOG] Finished {func.__name__}\n")
         return result
     return wrapper
 
@@ -21,7 +23,7 @@ def timeit(func):
         start = time.time()
         result = func(*args, **kwargs)
         duration = time.time() - start
-        print(f"[TIME] {func.__name__} ran in {duration:.3f} seconds")
+        if context.rank == context.mainrank: print(f"[TIME] {func.__name__} ran in {duration:.3f} seconds\n")
         return result
     return wrapper
 
