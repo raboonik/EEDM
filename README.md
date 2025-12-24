@@ -127,7 +127,7 @@ The optional outputs below (of which the first two are more important) can be sw
 
 ## Output keys of Equation 6 ("EigenenergyDDT_<|snapshot_name|>.h5")
 
-###q-directed (for q in [x,y,z]): 
+### q-directed (for q in [x,y,z]): 
 ```text
     Divergence: "eq6_m1_q"
     Entropy   : "eq6_m2_q"
@@ -143,7 +143,7 @@ The optional outputs below (of which the first two are more important) can be sw
 ## Output keys of Equations 9 ("EE_Slab\_<|slicingPlane|>\_<|slicingPnts|>.h5")
 These 2D-slabs contain both the eigenpowers and eigenenergies on the specified 2D planes.
 
-###q-directed eigenenergies (for q in [x,y,z]): 
+### q-directed eigenenergies (for q in [x,y,z]): 
 ```text
     Divergence: "eq9_m1_q"
     Entropy   : "eq9_m2_q"
@@ -157,7 +157,7 @@ These 2D-slabs contain both the eigenpowers and eigenenergies on the specified 2
 ```
 
 ## Output keys of the characteristic speeds ("Speed_<|snapshot_name|>.h5")
-###q-directed speeds (for q in [x,y,z]): 
+### q-directed speeds (for q in [x,y,z]): 
 ```text
     Aflven: "aq"
     slow  : "csq"
