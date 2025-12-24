@@ -4,7 +4,7 @@ EEDM is an exact 3D method of breaking down the total energy density associated 
 # Citation
 Please use the following `.bib` entries to cite the papers
 
-@article{Raboonik_2024,
+@article{Raboonik_2024a,
 doi = {10.3847/1538-4357/ad3bb6},
 url = { https://doi.org/10.3847/1538-4357/ad3bb6 },
 year = {2024},
@@ -18,7 +18,7 @@ title = {Exact Nonlinear Decomposition of Ideal-MHD Waves Using Eigenenergies},
 journal = {The Astrophysical Journal}
 }
 
-@article{Raboonik_2024,
+@article{Raboonik_2024b,
 doi = {10.3847/1538-4357/ad8dc8},
 url = { https://doi.org/10.3847/1538-4357/ad8dc8 },
 year = {2024},
