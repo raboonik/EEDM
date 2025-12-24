@@ -1,6 +1,56 @@
 # Eigenenergy Decomposition Method (EEDM)
 EEDM is an exact 3D method of breaking down the total energy density associated with compound nonlinear gravitational ideal-MHD disturbances into the energy contributions carried by each eigenmode. For more details, see [**Paper 1**](https://iopscience.iop.org/article/10.3847/1538-4357/ad3bb6), [**Paper 2**](https://iopscience.iop.org/article/10.3847/1538-4357/ad8dc8/meta) , and [**Paper 3**](https://iopscience.iop.org/article/10.3847/1538-4357/adc917). For the MPI-parallelized domain decomposition, the [AutoParallelizePy](https://github.com/raboonik/AutoParallelizePy) Python plug-in is used.
 
+# Citation
+Use the following `.bib` entries to cite
+
+@article{Raboonik_2024,
+doi = {10.3847/1538-4357/ad3bb6},
+url = {https://doi.org/10.3847/1538-4357/ad3bb6},
+year = {2024},
+month = {may},
+publisher = {The American Astronomical Society},
+volume = {967},
+number = {2},
+pages = {80},
+author = {Raboonik, Axel and Tarr, Lucas A. and Pontin, David I.},
+title = {Exact Nonlinear Decomposition of Ideal-MHD Waves Using Eigenenergies},
+journal = {The Astrophysical Journal}
+}
+
+@article{Raboonik_2024,
+doi = {10.3847/1538-4357/ad8dc8},
+url = {https://doi.org/10.3847/1538-4357/ad8dc8},
+year = {2024},
+month = {dec},
+publisher = {The American Astronomical Society},
+volume = {977},
+number = {2},
+pages = {191},
+author = {Raboonik, Axel and Pontin, David I. and Tarr, Lucas A.},
+title = {Exact Nonlinear Decomposition of Ideal-MHD Waves Using Eigenenergies. II. Fully Analytical Equations and Pseudoadvective Eigenenergies},
+journal = {The Astrophysical Journal}
+}
+
+@article{Raboonik_2025,
+doi = {10.3847/1538-4357/adc917},
+url = {https://doi.org/10.3847/1538-4357/adc917},
+year = {2025},
+month = {may},
+publisher = {The American Astronomical Society},
+volume = {985},
+number = {1},
+pages = {102},
+author = {Raboonik, Axel and Pontin, David I. and Tarr, Lucas A.},
+title = {Exact Nonlinear Decomposition of Ideal-MHD Waves Using Eigenenergies. III. Gravity, Generalized Inhomogeneous Quasi-linear Partial Differential Equations, Mode Conversion, and Numerical Implementation},
+journal = {The Astrophysical Journal}
+}
+
+
+
+
+
+
 # Author information
 Axel Raboonik
 
