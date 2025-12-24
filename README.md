@@ -4,6 +4,7 @@ EEDM is an exact 3D method of breaking down the total energy density associated 
 # Citation
 Please use the following `.bib` entries to cite the papers
 
+```text
 @article{Raboonik_2024a,
 doi = {10.3847/1538-4357/ad3bb6},
 url = { https://doi.org/10.3847/1538-4357/ad3bb6 },
@@ -45,11 +46,7 @@ author = {Raboonik, Axel and Pontin, David I. and Tarr, Lucas A.},
 title = {Exact Nonlinear Decomposition of Ideal-MHD Waves Using Eigenenergies. III. Gravity, Generalized Inhomogeneous Quasi-linear Partial Differential Equations, Mode Conversion, and Numerical Implementation},
 journal = {The Astrophysical Journal}
 }
-
-
-
-
-
+```
 
 # Author information
 Axel Raboonik
