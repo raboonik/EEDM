@@ -6,7 +6,7 @@ Please use the following `.bib` entries to cite the papers
 
 @article{Raboonik_2024,
 doi = {10.3847/1538-4357/ad3bb6},
-url = {https://doi.org/10.3847/1538-4357/ad3bb6},
+url = { https://doi.org/10.3847/1538-4357/ad3bb6 },
 year = {2024},
 month = {may},
 publisher = {The American Astronomical Society},
@@ -20,7 +20,7 @@ journal = {The Astrophysical Journal}
 
 @article{Raboonik_2024,
 doi = {10.3847/1538-4357/ad8dc8},
-url = {https://doi.org/10.3847/1538-4357/ad8dc8},
+url = { https://doi.org/10.3847/1538-4357/ad8dc8 },
 year = {2024},
 month = {dec},
 publisher = {The American Astronomical Society},
@@ -34,7 +34,7 @@ journal = {The Astrophysical Journal}
 
 @article{Raboonik_2025,
 doi = {10.3847/1538-4357/adc917},
-url = {https://doi.org/10.3847/1538-4357/adc917},
+url = { https://doi.org/10.3847/1538-4357/adc917 },
 year = {2025},
 month = {may},
 publisher = {The American Astronomical Society},
