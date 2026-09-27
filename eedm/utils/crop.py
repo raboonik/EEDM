@@ -40,6 +40,12 @@ def getCropIndecies3D_lare(obj, framexb, frameyb, framezb):
     else:
         frameb[4:] = [0, zb.shape[0]+1]
     
+    # Each crop frame must keep at least one whole cell, i.e. two cell faces
+    for k, a in enumerate("xyz"):
+        if frameb[2*k+1] - frameb[2*k] < 2:
+            raise ValueError("settings.cropFrame" + a + " = " + str([framexb, frameyb, framezb][k]) + " keeps no whole grid cell along " + a +
+                             " (it must be [lower, upper] with lower < upper, at least one cell wide). Widen it, or use [0, 0] for no cropping.")
+    
     if switchx:
         xb = xb[frameb[0]:frameb[1]]
         xc1 = 0.5 * (xb[1]  + xb[0])
@@ -86,24 +92,35 @@ def getCropIndecies3D_cc(obj, framexc, frameyc, framezc):
     if np.sum(np.abs(framexc)) > 0:
         idx0 = (np.abs(xc-framexc[0]) ).argmin()
         idx1 = (np.abs(xc-framexc[-1])).argmin()
-        framec[0:2] = [idx0, idx1]
+        framec[0:2] = [idx0, idx1 + 1]          # include the grid point nearest the upper limit, as for the lower one
     else:
         framec[0:2] = [0, xc.shape[0]]
     
     if np.sum(np.abs(frameyc)) > 0:
         idx0 = (np.abs(yc-frameyc[0]) ).argmin()
         idx1 = (np.abs(yc-frameyc[-1])).argmin()
-        framec[2:4] = [idx0, idx1]
+        framec[2:4] = [idx0, idx1 + 1]          # include the grid point nearest the upper limit, as for the lower one
     else:
         framec[2:4] = [0, yc.shape[0]]
     
     if np.sum(np.abs(framezc)) > 0:
         idx0 = (np.abs(zc-framezc[0]) ).argmin()
         idx1 = (np.abs(zc-framezc[-1])).argmin()
-        framec[4:6] = [idx0, idx1]
+        framec[4:6] = [idx0, idx1 + 1]          # include the grid point nearest the upper limit, as for the lower one
     else:
-        framec[4:6] = [0, xc.shape[0]]
+        framec[4:6] = [0, zc.shape[0]]
+
+    # Each crop frame must keep at least one grid point
+    for k, (a, fr) in enumerate(zip("xyz", (framexc, frameyc, framezc))):
+        if framec[2*k+1] - framec[2*k] < 1:
+            raise ValueError("settings.cropFrame" + a + " = " + str(fr) + " keeps no grid point along " + a + " (it must be [lower, upper] with lower < upper). " +
+                             "Widen it, or use [0, 0] for no cropping.")
     
+    # Crop the coordinates to match the cropped data
+    xc = xc[framec[0]:framec[1]]
+    yc = yc[framec[2]:framec[3]]
+    zc = zc[framec[4]:framec[5]]
+
     return xc, yc, zc, framec
     
     

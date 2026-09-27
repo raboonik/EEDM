@@ -996,7 +996,7 @@ def calculate_curl_lare(bx,by,bz,x,y,z):
     return curlx,curly,curlz
 
 def calculate_currents(bxc, byc, bzc, xb, yb,zb):
-    '''Calculate properly averaged electric currents at cell vertices
+    r'''Calculate properly averaged electric currents at cell vertices
     
     This functions calculates the electric current density vector at cell vertices,
     as used in the LaRe fortran code.  It is found by differencing the correct
@@ -1070,7 +1070,7 @@ def calculate_currents(bxc, byc, bzc, xb, yb,zb):
 
     
 def calculate_jacobian_vertex(bxc,byc,bzc, xb,yb,zb):
-    '''Calculate the Jacobian of the magnetic field, defined at cell vertices.
+    r'''Calculate the Jacobian of the magnetic field, defined at cell vertices.
     
     The jacobian of B_vec is needed to properly decompose the lorentz force into 
     the magnetic tension and pressure terms, and further, to determine the extent 
@@ -1191,7 +1191,7 @@ def calc_grad_Bsquared(bxv,byv,bzv,jac):
     kappa = np.sqrt(ddsbx**2+ddsby**2+ddsbz**2)
 
 def calc_magnetic_tension_force(bxc,byc,bzc, xb,yb,zb):
-    '''Calculate the components of magnetic tension.
+    r'''Calculate the components of magnetic tension.
 
     The magnetic tension :math:`\mathbf{f}_t` is given by
 
@@ -1225,7 +1225,7 @@ def calc_magnetic_tension_force(bxc,byc,bzc, xb,yb,zb):
 
 
 def calc_magnetic_pressure_force(bxc,byc,bzc,xb,yb,zb):
-    '''Calculate the components of magnetic tension.
+    r'''Calculate the components of magnetic tension.
 
     The magnetic tension :math:`\mathbf{f}_p` is given by
 

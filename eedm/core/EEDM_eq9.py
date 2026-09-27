@@ -10,6 +10,8 @@
 '''
 
 import numpy as np
+import os
+import contextlib
 import h5py
 
 try:
@@ -19,6 +21,7 @@ except ImportError:
 
 
 from .. import context as ct
+from .. import io
 from .. import utils
 from .. import system
 from .. import APP
@@ -29,23 +32,32 @@ import settings as set
 @decorators.memoize
 def run(dirDict):
     
-    # Read the eigenenergy time derivatives
-    fid1      = system.fid(dirDict["eq6"]+'EigenenergyDDT_*.h5')
-    filenames = [fid1[i].replace(dirDict["eq6"], '') for i in range(len(fid1))]
+    # Use exactly the Equation 6 outputs of the snapshots selected by the current settings, in time order,
+    # so that leftovers from earlier runs in the same folder are never mixed in
+    stems = [os.path.splitext(os.path.basename(f))[0] for f in io.reader.select_snapshots()[0]]
     
-    nt = len(fid1)
-    if ct.rank == ct.mainrank and nt == 0: raise ValueError("No EEDM snapshots found in "+dirDict["eq6"])
+    def selected_files(key, prefix):
+        files   = [os.path.join(dirDict[key], prefix + stem + '.h5') for stem in stems]
+        missing = [f for f in files if not os.path.isfile(f)]
+        if len(missing) > 0:
+            raise ValueError("Equation 9 needs the " + prefix + "*.h5 file of every snapshot selected in settings.py, but " + str(len(missing)) + " of " +
+                             str(len(files)) + " are missing from " + dirDict[key] + " (e.g. " + os.path.basename(missing[0]) + "). Compute Equation 6 " +
+                             'with the same settings first (computationSwitch = "eq6" or "both").')
+        return files
     
-    fidEn = []
-    fidSp = []
-    # If requested, read the energy, and characteristic speed data
-    if ct.EnCond: fidEn = system.fid(dirDict["energy"]+'Etot_*.h5')
-    if ct.SpCond: fidSp = system.fid(dirDict["speed" ]+'Speed_*.h5')
+    # The eigenenergy time derivatives, and if requested, the energy, characteristic speed, and divB/entropy (Extras) data
+    fid1      = selected_files("eq6", "EigenenergyDDT_")
+    filenames = [os.path.basename(f) for f in fid1]
+    nt        = len(fid1)
+    fidEn     = selected_files("energy", "Etot_")   if ct.EnCond               else []
+    fidSp     = selected_files("speed" , "Speed_")  if ct.SpCond               else []
+    fidEx     = selected_files("extra" , "Extras_") if ct.DbCond or ct.PkCond  else []
     
-    if len(fidEn) > 0: assert len(fidEn) == nt
-    if len(fidSp) > 0: assert len(fidSp) == nt
+    unused = len(system.fid(os.path.join(dirDict["eq6"], 'EigenenergyDDT_*.h5'))) - nt
+    if unused > 0 and ct.rank == ct.mainrank:
+        print("Note: ignoring " + str(unused) + " Equation 6 file(s) in " + dirDict["eq6"] + " that the current settings do not select.\n")
     
-    dat      = h5py.File(dirDict['parent']+'grid_params.h5','r') 
+    dat      = h5py.File(os.path.join(dirDict['parent'], 'grid_params.h5'),'r') 
     g        = dat.attrs["g"]
     GrCond   = dat.attrs["gCond"]
     xb       = np.array(dat["xc"])
@@ -57,19 +69,23 @@ def run(dirDict):
     
     # Although here we're only considering the full physical domain, we add the my prefix to avoid having to repeat essentially the same lines of code
     # with tiny tweaks to differentiate 1D and 4D. We will modify these quantities if dim = "4D-parallelize"
+    # The slab indices along the plane's normal (checked again here, so that an Equation 9 only run is checked too)
+    slabIdx, _, notes = utils.get_energy_sliced.resolve_slicing_points(set.slicingPlane, set.slicingPnts, getattr(set, "slicingPntsType", None), xb, yb, zb)
+    if ct.rank == ct.mainrank and not ct.eq6Cond:
+        for note in notes: print(note)
+    
     nx,ny,nz,axis1,axis2,axis3,slicingPnts,slicingPntsL, mylenq, mynq1, mynq2, mynq1i, mynq1f, mynq2i, mynq2f, mynq3i, mynq3f, outfilename1, outfilename2 = \
-            utils.get_energy_sliced.get_slice_2d(set.slicingPlane, set.slicingPnts, xb,yb,zb, dirDict["eq9"])
+            utils.get_energy_sliced.get_slice_2d(set.slicingPlane, slabIdx, xb,yb,zb, dirDict["eq9"])
+    slicingPnts = np.array(slicingPnts, dtype=int)
     
     # Note that here mylenq,mynq1,mynq2 = lenq,nq1,nq2
     lenq,nq1,nq2 = mylenq,mynq1,mynq2
     axes_limits  = [lenq,nq1,nq2,nt]
     
-    if ct.rank == ct.mainrank: print("outfilename1 = ", outfilename1)
-    
     if ct.rank == ct.mainrank:
-        print("")
-        print("The 3D data will be sliced into a " + set.slicingPlane + "-plane at slicingPnts = n" + "xyz".strip(set.slicingPlane) + " = " + str(slicingPnts))
-        print("")
+        normal = "xyz".strip(set.slicingPlane)
+        print("Equation 9: time integrals over " + str(nt) + " snapshot(s) on " + str(lenq) + " " + set.slicingPlane + "-slab(s), at " +
+              ", ".join("%s = %g (index %d)" % (normal, float(loc), int(idx)) for loc, idx in zip(slicingPntsL, slicingPnts)), flush=True)
     
     # Parallelize the first 3 axes, since we want the entire time axis to avoid having to call reshape_array_ND which is costly
     parallel_axes = [0,1,2]
@@ -81,13 +97,15 @@ def run(dirDict):
     slq2          = domDecompND.slq[2][ct.rank]
     elq2          = domDecompND.elq[2][ct.rank]
     
-    if ct.rank == 0:
-        print("size = "                 , ct.size)
-        print("axes_limits = "          , axes_limits)
-        print("parallel_axes = "        , parallel_axes)
-        print("domainDecomposeND = "    , domDecompND)
-        print("domainDecomposeND.slq = ", domDecompND.slq)
-        print("domainDecomposeND.elq = ", domDecompND.elq)
+    # AutoParallelizePy transfers arrays as MPI.DOUBLE: send float64, then return to the chosen precision
+    def gather(subArr):
+        out = APP.mpi.gather_array_ND(ct.comm, ct.rank, ct.mainrank, domDecompND, np.asarray(subArr, dtype=np.float64))
+        return None if out is None else out.astype(ct.dtype, copy=False)
+    
+    if ct.verbose and ct.rank == ct.mainrank:
+        print("  domain decomposition over " + str(ct.size) + " rank(s): axes_limits = " + str(axes_limits) + ", parallel_axes = " + str(parallel_axes))
+        print("  first indices per rank (slq):\n" + str(domDecompND.slq))
+        print("  end indices per rank (elq):\n" + str(domDecompND.elq), flush=True)
     
     # Get the sub-sub-spatial slicing indeces for each proc
     if   set.slicingPlane == "xy":
@@ -105,171 +123,128 @@ def run(dirDict):
     
     myshape = domDecompND.mynq[:,ct.rank]
     
-    print("rank, myshape, mynq1i, mynq1f, mynq2i, mynq2f, mynq3i, mynq3f = ", ct.rank, myshape, mynq1i, mynq1f, mynq2i, mynq2f, mynq3i, mynq3f, "\n")
+    if ct.verbose:
+        print("  [rank %d] sub-slab shape %s; index ranges %s:%s, %s:%s, %s:%s" % (ct.rank, [int(v) for v in myshape], [int(v) for v in mynq1i], [int(v) for v in mynq1f],
+              [int(v) for v in mynq2i], [int(v) for v in mynq2f], [int(v) for v in mynq3i], [int(v) for v in mynq3f]), flush=True)
     
-    # The benefit of using the my prefex from the get-go is that we don't have to repeat the same lines of code for 1D and 4D separately
-    myDDTenDivx  = np.zeros(myshape)
-    myDDTenDivy  = np.zeros(myshape)
-    myDDTenDivz  = np.zeros(myshape)
-    myDDTenEntx  = np.zeros(myshape)
-    myDDTenEnty  = np.zeros(myshape)
-    myDDTenEntz  = np.zeros(myshape)
-    myDDTenGra   = np.zeros(myshape)
-    myDDTenAlfx  = np.zeros(myshape)
-    myDDTenSlox  = np.zeros(myshape)
-    myDDTenFasx  = np.zeros(myshape)
-    myDDTenAlfy  = np.zeros(myshape)
-    myDDTenSloy  = np.zeros(myshape)
-    myDDTenFasy  = np.zeros(myshape)
-    myDDTenAlfz  = np.zeros(myshape)
-    myDDTenSloz  = np.zeros(myshape)
-    myDDTenFasz  = np.zeros(myshape)
+    # The eigenenergy outputs of the chosen decomposition (the g output only with gravity), plus the divB error term of Paper II
+    # Outputs along invariant axes (2D and 1D runs) are [0] placeholders: they are written as such to the slabs, not integrated
+    empty = utils.decomposition.placeholders(gravity=GrCond)
+    names = [name for name in utils.decomposition.outputs(gravity=GrCond) if name not in empty]
+    if ct.ErCond: names.append('m1_err')
     
+    # Equation 6 must have been computed with the same decomposition
+    with h5py.File(fid1[0], 'r') as dat:
+        missing = [name for name in names if 'eq6_' + name not in dat]
+    if len(missing) > 0:
+        with h5py.File(os.path.join(dirDict['parent'], 'grid_params.h5'), 'r') as dat:
+            used = dat.attrs.get('decomposition', 'unknown')
+        raise ValueError("The Equation 6 files in " + dirDict["eq6"] + " were computed with decomposition = " + repr(used) + " and have no " +
+                         ", ".join('eq6_' + name for name in missing) + ". Compute Equation 6 again with decomposition = " + repr(ct.decomposition) +
+                         ", or run Equation 9 with decomposition = " + repr(used) + ".")
+    
+    myDDTen = {name: np.zeros(myshape, dtype=ct.dtype) for name in names}
     
     if ct.SpCond:
-        myax         = np.zeros(myshape)
-        myay         = np.zeros(myshape)
-        myaz         = np.zeros(myshape)
-        mycsx        = np.zeros(myshape)
-        mycsy        = np.zeros(myshape)
-        mycsz        = np.zeros(myshape)
-        mycfx        = np.zeros(myshape)
-        mycfy        = np.zeros(myshape)
-        mycfz        = np.zeros(myshape)
-        mycs         = np.zeros(myshape)
+        myax         = np.zeros(myshape, dtype=ct.dtype)
+        myay         = np.zeros(myshape, dtype=ct.dtype)
+        myaz         = np.zeros(myshape, dtype=ct.dtype)
+        mycsx        = np.zeros(myshape, dtype=ct.dtype)
+        mycsy        = np.zeros(myshape, dtype=ct.dtype)
+        mycsz        = np.zeros(myshape, dtype=ct.dtype)
+        mycfx        = np.zeros(myshape, dtype=ct.dtype)
+        mycfy        = np.zeros(myshape, dtype=ct.dtype)
+        mycfz        = np.zeros(myshape, dtype=ct.dtype)
+        mycs         = np.zeros(myshape, dtype=ct.dtype)
         
     if ct.EnCond:
-        myEtot       = np.zeros(myshape)
-        
-    if ct.ErCond: myDDTenDiv1 = np.zeros(myshape)
-    
-    if set.mode == "XYZUpDownSeparated":
-        myDDTenAlfx_2 = np.zeros(myshape)
-        myDDTenSlox_2 = np.zeros(myshape)
-        myDDTenFasx_2 = np.zeros(myshape)
-        myDDTenAlfy_2 = np.zeros(myshape)
-        myDDTenSloy_2 = np.zeros(myshape)
-        myDDTenFasy_2 = np.zeros(myshape)
-        myDDTenAlfz_2 = np.zeros(myshape)
-        myDDTenSloz_2 = np.zeros(myshape)
-        myDDTenFasz_2 = np.zeros(myshape)
+        myEtot       = np.zeros(myshape, dtype=ct.dtype)
     
     # Since t is not parallelized, we can simply read time from HDF times for each ct.rank individually
     time        = np.zeros(nt)
     
     if ct.DbCond: 
-        maxDivB     = np.zeros(nt)
-        meanDivB    = np.zeros(nt)
-        stdDivB     = np.zeros(nt)
+        maxDivB     = np.zeros(nt, dtype=ct.dtype)
+        meanDivB    = np.zeros(nt, dtype=ct.dtype)
+        stdDivB     = np.zeros(nt, dtype=ct.dtype)
     if ct.PkCond:
-        maxEntropy  = np.zeros(nt)
-        meanEntropy = np.zeros(nt)
-        stdEntropy  = np.zeros(nt)
+        maxEntropy  = np.zeros(nt, dtype=ct.dtype)
+        meanEntropy = np.zeros(nt, dtype=ct.dtype)
+        stdEntropy  = np.zeros(nt, dtype=ct.dtype)
+    
+    # A slab read from the 3D data has shape (n1, 1, n2) (or similar): drop only the axis normal to the slab. np.squeeze would
+    # also drop an in-plane axis that happens to be 1 point wide on this rank, and the result would no longer fit
+    def in_plane(a):
+        return np.reshape(a, (int(myshape[1]), int(myshape[2])))
     
     for i in range(nt):
-        filename = filenames[i]
-        if ct.rank == ct.mainrank: print("Reading", filename, "...")
-        dat   = h5py.File(open(fid1[i],  'rb'), 'r')
-        
-        time[i] = float(dat.attrs['time'])
-        
-        if ct.SpCond: datSp = h5py.File(open(fidSp[i], 'rb'), 'r')
-        
-        if ct.EnCond: datEn = h5py.File(open(fidEn[i], 'rb'), 'r')
-        
-        if ct.DbCond: 
-            maxDivB[i]     = float(datEn.attrs['maxAbsDivB'    ])
-            meanDivB[i]    = float(datEn.attrs['meanAbsDivB'   ])
-            stdDivB[i]     = float(datEn.attrs['stdAbsDivB'    ])
-        
-        if ct.PkCond:
-            maxEntropy[i]  = float(datEn.attrs['maxAbsEntropy' ])
-            meanEntropy[i] = float(datEn.attrs['meanAbsEntropy'])
-            stdEntropy[i]  = float(datEn.attrs['stdAbsEntropy' ])
-        
-        for ipnt in range(mylenq):
-            myDDTenDivx[ ipnt,:,:,i] = np.squeeze(dat["eq6_m1_x"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-            myDDTenDivy[ ipnt,:,:,i] = np.squeeze(dat["eq6_m1_y"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-            myDDTenDivz[ ipnt,:,:,i] = np.squeeze(dat["eq6_m1_z"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-            myDDTenEntx[ ipnt,:,:,i] = np.squeeze(dat["eq6_m2_x"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-            myDDTenEnty[ ipnt,:,:,i] = np.squeeze(dat["eq6_m2_y"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-            myDDTenEntz[ ipnt,:,:,i] = np.squeeze(dat["eq6_m2_z"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-            myDDTenAlfx[ipnt,:,:,i]  = np.squeeze(dat["eq6_m3_x"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-            myDDTenSlox[ipnt,:,:,i]  = np.squeeze(dat["eq6_m5_x"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-            myDDTenFasx[ipnt,:,:,i]  = np.squeeze(dat["eq6_m7_x"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-            myDDTenAlfy[ipnt,:,:,i]  = np.squeeze(dat["eq6_m3_y"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-            myDDTenSloy[ipnt,:,:,i]  = np.squeeze(dat["eq6_m5_y"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-            myDDTenFasy[ipnt,:,:,i]  = np.squeeze(dat["eq6_m7_y"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-            myDDTenAlfz[ipnt,:,:,i]  = np.squeeze(dat["eq6_m3_z"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-            myDDTenSloz[ipnt,:,:,i]  = np.squeeze(dat["eq6_m5_z"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-            myDDTenFasz[ipnt,:,:,i]  = np.squeeze(dat["eq6_m7_z"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
+        # Read through Python file objects (as before, so HDF5's own file locking is not involved), and close every
+        # HDF5 file and its file object at the end of the iteration, even if an error occurs
+        with contextlib.ExitStack() as files:
+            def open_h5(path):
+                return files.enter_context(h5py.File(files.enter_context(open(path, 'rb')), 'r'))
             
-            if set.mode == "XYZUpDownSeparated":
-                myDDTenAlfx_2[ipnt,:,:,i] = np.squeeze(dat["eq6_m4_x"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-                myDDTenSlox_2[ipnt,:,:,i] = np.squeeze(dat["eq6_m6_x"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-                myDDTenFasx_2[ipnt,:,:,i] = np.squeeze(dat["eq6_m8_x"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-                myDDTenAlfy_2[ipnt,:,:,i] = np.squeeze(dat["eq6_m4_y"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-                myDDTenSloy_2[ipnt,:,:,i] = np.squeeze(dat["eq6_m6_y"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-                myDDTenFasy_2[ipnt,:,:,i] = np.squeeze(dat["eq6_m8_y"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-                myDDTenAlfz_2[ipnt,:,:,i] = np.squeeze(dat["eq6_m4_z"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-                myDDTenSloz_2[ipnt,:,:,i] = np.squeeze(dat["eq6_m6_z"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-                myDDTenFasz_2[ipnt,:,:,i] = np.squeeze(dat["eq6_m8_z"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-            elif set.mode == "revFor_combined":
-                myDDTenAlfx[ipnt,:,:,i] = myDDTenAlfx[ipnt,:,:,i] + np.squeeze(dat["eq6_m4_x"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-                myDDTenSlox[ipnt,:,:,i] = myDDTenSlox[ipnt,:,:,i] + np.squeeze(dat["eq6_m6_x"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-                myDDTenFasx[ipnt,:,:,i] = myDDTenFasx[ipnt,:,:,i] + np.squeeze(dat["eq6_m8_x"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-                myDDTenAlfy[ipnt,:,:,i] = myDDTenAlfy[ipnt,:,:,i] + np.squeeze(dat["eq6_m4_y"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-                myDDTenSloy[ipnt,:,:,i] = myDDTenSloy[ipnt,:,:,i] + np.squeeze(dat["eq6_m6_y"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-                myDDTenFasy[ipnt,:,:,i] = myDDTenFasy[ipnt,:,:,i] + np.squeeze(dat["eq6_m8_y"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-                myDDTenAlfz[ipnt,:,:,i] = myDDTenAlfz[ipnt,:,:,i] + np.squeeze(dat["eq6_m4_z"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-                myDDTenSloz[ipnt,:,:,i] = myDDTenSloz[ipnt,:,:,i] + np.squeeze(dat["eq6_m6_z"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-                myDDTenFasz[ipnt,:,:,i] = myDDTenFasz[ipnt,:,:,i] + np.squeeze(dat["eq6_m8_z"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])    
+            filename = filenames[i]
+            if ct.rank == ct.mainrank: print("  reading %s (%d/%d)" % (filename, i + 1, nt), flush=True)
+            dat   = open_h5(fid1[i])
             
-            if GrCond:
-                myDDTenGra[ ipnt,:,:,i] = np.squeeze(dat["eq6_m9_z"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
+            time[i] = float(dat.attrs['time'])
             
-            if ct.SpCond:
-                myax[  ipnt,:,:,i]      = np.squeeze(   datSp["ax"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-                myay[  ipnt,:,:,i]      = np.squeeze(   datSp["ay"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-                myaz[  ipnt,:,:,i]      = np.squeeze(   datSp["az"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-                mycsx[ ipnt,:,:,i]      = np.squeeze(  datSp["csx"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-                mycsy[ ipnt,:,:,i]      = np.squeeze(  datSp["csy"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-                mycsz[ ipnt,:,:,i]      = np.squeeze(  datSp["csz"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-                mycfx[ ipnt,:,:,i]      = np.squeeze(  datSp["cfx"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]]) 
-                mycfy[ ipnt,:,:,i]      = np.squeeze(  datSp["cfy"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-                mycfz[ ipnt,:,:,i]      = np.squeeze(  datSp["cfz"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
+            if ct.SpCond: datSp = open_h5(fidSp[i])
+            
+            if ct.EnCond: datEn = open_h5(fidEn[i])
+            
+            # The divB and entropy statistics are stored in the Extras files by Eq6
+            if ct.DbCond or ct.PkCond: datEx = open_h5(fidEx[i])
+            
+            if ct.DbCond: 
+                maxDivB[i]     = float(datEx.attrs['maxAbsDivB'    ])
+                meanDivB[i]    = float(datEx.attrs['meanAbsDivB'   ])
+                stdDivB[i]     = float(datEx.attrs['stdAbsDivB'    ])
+            
+            if ct.PkCond:
+                maxEntropy[i]  = float(datEx.attrs['maxAbsEntropy' ])
+                meanEntropy[i] = float(datEx.attrs['meanAbsEntropy'])
+                stdEntropy[i]  = float(datEx.attrs['stdAbsEntropy' ])
+            
+            for ipnt in range(mylenq):
+                for name in names:
+                    myDDTen[name][ipnt,:,:,i] = in_plane(dat["eq6_" + name][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
                 
-                mycs[  ipnt,:,:,i]      = np.sqrt(mycfz[ipnt,:,:,i]**2 + mycsz[ipnt,:,:,i]**2 - (myax[ipnt,:,:,i]**2 + myay[ipnt,:,:,i]**2 + myaz[ipnt,:,:,i]**2))
-            
-            if ct.EnCond:
-                myEtot[ipnt,:,:,i]      = np.squeeze(  datEn["Kin"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]] +
-                                                       datEn["Mag"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]] +
-                                                       datEn["Int"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
+                if ct.SpCond:
+                    myax[  ipnt,:,:,i]      = in_plane(   datSp["ax"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
+                    myay[  ipnt,:,:,i]      = in_plane(   datSp["ay"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
+                    myaz[  ipnt,:,:,i]      = in_plane(   datSp["az"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
+                    mycsx[ ipnt,:,:,i]      = in_plane(  datSp["csx"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
+                    mycsy[ ipnt,:,:,i]      = in_plane(  datSp["csy"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
+                    mycsz[ ipnt,:,:,i]      = in_plane(  datSp["csz"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
+                    mycfx[ ipnt,:,:,i]      = in_plane(  datSp["cfx"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]]) 
+                    mycfy[ ipnt,:,:,i]      = in_plane(  datSp["cfy"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
+                    mycfz[ ipnt,:,:,i]      = in_plane(  datSp["cfz"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
+                    
+                    mycs[  ipnt,:,:,i]      = np.sqrt(mycfz[ipnt,:,:,i]**2 + mycsz[ipnt,:,:,i]**2 - (myax[ipnt,:,:,i]**2 + myay[ipnt,:,:,i]**2 + myaz[ipnt,:,:,i]**2))
                 
-                if GrCond: 
-                    myEtot[ipnt,:,:,i]      = np.squeeze(datEn["Grv"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]]) + \
-                                                         myEtot[ipnt,:,:,i]
-            
-            if ct.ErCond: 
-                myDDTenDiv1[ ipnt,:,:,i] = np.squeeze(dat["eq6_m1_err"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
-        
-        dat.close()
-        if ct.SpCond: datSp.close()
-        if ct.EnCond: datEn.close()
+                if ct.EnCond:
+                    myEtot[ipnt,:,:,i]      = in_plane(  datEn["Kin"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]] +
+                                                           datEn["Mag"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]] +
+                                                           datEn["Int"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]])
+                    
+                    if GrCond: 
+                        myEtot[ipnt,:,:,i]      = in_plane(datEn["Grv"][mynq1i[ipnt]:mynq1f[ipnt],mynq2i[ipnt]:mynq2f[ipnt],mynq3i[ipnt]:mynq3f[ipnt]]) + \
+                                                             myEtot[ipnt,:,:,i]
     
     # Gather everything on ct.mainrank to export
     if ct.rank == ct.mainrank:
-        print("Gathering everything on ct.mainrank and writing to ouput h5 files...\n")
+        print("  writing the slab file(s): " + ", ".join(os.path.basename(f) for f in outfilename1[:lenq]), flush=True)
     
     if ct.SpCond:
-        ax  = APP.mpi.gather_array_ND(ct.comm, ct.rank, ct.mainrank, domDecompND, myax )
-        ay  = APP.mpi.gather_array_ND(ct.comm, ct.rank, ct.mainrank, domDecompND, myay )
-        az  = APP.mpi.gather_array_ND(ct.comm, ct.rank, ct.mainrank, domDecompND, myaz )
+        ax  = gather(myax)
+        ay  = gather(myay)
+        az  = gather(myaz)
     
     if ct.rank == ct.mainrank:
         timesteps = (np.roll(time,-1,axis=0) - time)[0:-1]
         for ipnt in range(lenq):
-            print("Writing 3D-2D sliced data to "+outfilename1[ipnt]+"\n")
             hdf = h5py.File(outfilename1[ipnt], "w")
             hdf.attrs['slicingPnt']   = slicingPnts[ipnt]
             hdf.attrs['slicingPntL']  = slicingPntsL[ipnt]
@@ -284,22 +259,23 @@ def run(dirDict):
             hdf.attrs['axis2']        = axis2
             hdf.attrs['axis3']        = axis3
             hdf.attrs['g']            = g
-            hdf.create_dataset('xc'          ,   data=np.array(xb,              dtype='float64'), compression='gzip', compression_opts=9)
-            hdf.create_dataset('yc'          ,   data=np.array(yb,              dtype='float64'), compression='gzip', compression_opts=9)
-            hdf.create_dataset('zc'          ,   data=np.array(zb,              dtype='float64'), compression='gzip', compression_opts=9)
+            hdf.create_dataset('xc'          ,   data=np.array(xb,              dtype=ct.dtype), compression='gzip', compression_opts=9)
+            hdf.create_dataset('yc'          ,   data=np.array(yb,              dtype=ct.dtype), compression='gzip', compression_opts=9)
+            hdf.create_dataset('zc'          ,   data=np.array(zb,              dtype=ct.dtype), compression='gzip', compression_opts=9)
             hdf.create_dataset('time'        ,   data=np.array(time,            dtype='float64'), compression='gzip', compression_opts=9)
             hdf.create_dataset('timesteps'   ,   data=np.array(timesteps,       dtype='float64'), compression='gzip', compression_opts=9)
             if ct.SpCond:
-                hdf.create_dataset('ax'          ,   data=np.array(ax[ipnt,:,:,:] , dtype='float64'), compression='gzip', compression_opts=9)
-                hdf.create_dataset('ay'          ,   data=np.array(ay[ipnt,:,:,:] , dtype='float64'), compression='gzip', compression_opts=9)
-                hdf.create_dataset('az'          ,   data=np.array(az[ipnt,:,:,:] , dtype='float64'), compression='gzip', compression_opts=9)
-            if ct.ErCond:
-                hdf.create_dataset('maxDivB'     ,   data=np.array(maxDivB,         dtype='float64'), compression='gzip', compression_opts=9)
-                hdf.create_dataset('meanDivB'    ,   data=np.array(meanDivB,        dtype='float64'), compression='gzip', compression_opts=9)
-                hdf.create_dataset('stdDivB'     ,   data=np.array(stdDivB,         dtype='float64'), compression='gzip', compression_opts=9)
-                hdf.create_dataset('maxEntropy'  ,   data=np.array(maxEntropy,      dtype='float64'), compression='gzip', compression_opts=9)
-                hdf.create_dataset('meanEntropy' ,   data=np.array(meanEntropy,     dtype='float64'), compression='gzip', compression_opts=9)
-                hdf.create_dataset('stdEntropy'  ,   data=np.array(stdEntropy,      dtype='float64'), compression='gzip', compression_opts=9)
+                hdf.create_dataset('ax'          ,   data=np.array(ax[ipnt,:,:,:] , dtype=ct.dtype), compression='gzip', compression_opts=9)
+                hdf.create_dataset('ay'          ,   data=np.array(ay[ipnt,:,:,:] , dtype=ct.dtype), compression='gzip', compression_opts=9)
+                hdf.create_dataset('az'          ,   data=np.array(az[ipnt,:,:,:] , dtype=ct.dtype), compression='gzip', compression_opts=9)
+            if ct.DbCond:
+                hdf.create_dataset('maxDivB'     ,   data=np.array(maxDivB,         dtype=ct.dtype), compression='gzip', compression_opts=9)
+                hdf.create_dataset('meanDivB'    ,   data=np.array(meanDivB,        dtype=ct.dtype), compression='gzip', compression_opts=9)
+                hdf.create_dataset('stdDivB'     ,   data=np.array(stdDivB,         dtype=ct.dtype), compression='gzip', compression_opts=9)
+            if ct.PkCond:
+                hdf.create_dataset('maxEntropy'  ,   data=np.array(maxEntropy,      dtype=ct.dtype), compression='gzip', compression_opts=9)
+                hdf.create_dataset('meanEntropy' ,   data=np.array(meanEntropy,     dtype=ct.dtype), compression='gzip', compression_opts=9)
+                hdf.create_dataset('stdEntropy'  ,   data=np.array(stdEntropy,      dtype=ct.dtype), compression='gzip', compression_opts=9)
             hdf.close()
     
     if ct.SpCond:
@@ -310,25 +286,24 @@ def run(dirDict):
             ay  ,
             az)
         
-        csx = APP.mpi.gather_array_ND(ct.comm, ct.rank, ct.mainrank, domDecompND, mycsx)
-        csy = APP.mpi.gather_array_ND(ct.comm, ct.rank, ct.mainrank, domDecompND, mycsy)
-        csz = APP.mpi.gather_array_ND(ct.comm, ct.rank, ct.mainrank, domDecompND, mycsz)
-        cfx = APP.mpi.gather_array_ND(ct.comm, ct.rank, ct.mainrank, domDecompND, mycfx)
-        cfy = APP.mpi.gather_array_ND(ct.comm, ct.rank, ct.mainrank, domDecompND, mycfy)
-        cfz = APP.mpi.gather_array_ND(ct.comm, ct.rank, ct.mainrank, domDecompND, mycfz)
-        cs  = APP.mpi.gather_array_ND(ct.comm, ct.rank, ct.mainrank, domDecompND, mycs )
+        csx = gather(mycsx)
+        csy = gather(mycsy)
+        csz = gather(mycsz)
+        cfx = gather(mycfx)
+        cfy = gather(mycfy)
+        cfz = gather(mycfz)
+        cs  = gather(mycs)
         
         if ct.rank == ct.mainrank:
-            print("csq,cfq,cs gatehred, starting to write to file!\n")
             for ipnt in range(lenq):
                 hdf = h5py.File(outfilename1[ipnt], "a")
-                hdf.create_dataset('csx',         data=np.array(csx[ipnt,:,:,:], dtype='float64'), compression='gzip', compression_opts=9)
-                hdf.create_dataset('csy',         data=np.array(csy[ipnt,:,:,:], dtype='float64'), compression='gzip', compression_opts=9)
-                hdf.create_dataset('csz',         data=np.array(csz[ipnt,:,:,:], dtype='float64'), compression='gzip', compression_opts=9)
-                hdf.create_dataset('cfx',         data=np.array(cfx[ipnt,:,:,:], dtype='float64'), compression='gzip', compression_opts=9)
-                hdf.create_dataset('cfy',         data=np.array(cfy[ipnt,:,:,:], dtype='float64'), compression='gzip', compression_opts=9)
-                hdf.create_dataset('cfz',         data=np.array(cfz[ipnt,:,:,:], dtype='float64'), compression='gzip', compression_opts=9)
-                hdf.create_dataset('cs' ,         data=np.array(cs[ipnt,:,:,:] , dtype='float64'), compression='gzip', compression_opts=9)
+                hdf.create_dataset('csx',         data=np.array(csx[ipnt,:,:,:], dtype=ct.dtype), compression='gzip', compression_opts=9)
+                hdf.create_dataset('csy',         data=np.array(csy[ipnt,:,:,:], dtype=ct.dtype), compression='gzip', compression_opts=9)
+                hdf.create_dataset('csz',         data=np.array(csz[ipnt,:,:,:], dtype=ct.dtype), compression='gzip', compression_opts=9)
+                hdf.create_dataset('cfx',         data=np.array(cfx[ipnt,:,:,:], dtype=ct.dtype), compression='gzip', compression_opts=9)
+                hdf.create_dataset('cfy',         data=np.array(cfy[ipnt,:,:,:], dtype=ct.dtype), compression='gzip', compression_opts=9)
+                hdf.create_dataset('cfz',         data=np.array(cfz[ipnt,:,:,:], dtype=ct.dtype), compression='gzip', compression_opts=9)
+                hdf.create_dataset('cs' ,         data=np.array(cs[ipnt,:,:,:] , dtype=ct.dtype), compression='gzip', compression_opts=9)
                 hdf.close()
         
         del(mycsx,
@@ -346,565 +321,49 @@ def run(dirDict):
             cs   ,
             csx)
         
-        if ct.rank == ct.mainrank: print("Writing velocity components to file done!\n")
-        
+        if ct.rank == ct.mainrank: print("  written: the characteristic speeds", flush=True)
     
-    myenDivx = np.zeros(myshape)
-    myenDivy = np.zeros(myshape)
-    myenDivz = np.zeros(myshape)
-    myenEntx = np.zeros(myshape)
-    myenEnty = np.zeros(myshape)
-    myenEntz = np.zeros(myshape)
-    myenAlfx = np.zeros(myshape)
-    myenAlfy = np.zeros(myshape)
-    myenAlfz = np.zeros(myshape)
-    myenSlox = np.zeros(myshape)
-    myenSloy = np.zeros(myshape)
-    myenSloz = np.zeros(myshape)
-    myenFasx = np.zeros(myshape)
-    myenFasy = np.zeros(myshape)
-    myenFasz = np.zeros(myshape)
+    if ct.EnCond:
+        Etot = gather(myEtot)
+        if ct.rank == ct.mainrank:
+            for ipnt in range(lenq):
+                hdf = h5py.File(outfilename1[ipnt], "a")
+                hdf.create_dataset('Etot', data=np.array(Etot[ipnt,:,:,:], dtype=ct.dtype), compression='gzip', compression_opts=9)
+                hdf.close()
+            print("  written: the total energy Etot", flush=True)
+        del(myEtot, Etot)
     
-    if ct.ErCond: myenDiv1  = np.zeros(myshape)
+    def write(key, subArr):
+        full = gather(subArr)
+        if ct.rank == ct.mainrank:
+            for ipnt in range(lenq):
+                hdf = h5py.File(outfilename1[ipnt], "a")
+                hdf.create_dataset(key, data=np.array(full[ipnt,:,:,:], dtype=ct.dtype), compression='gzip', compression_opts=9)
+                hdf.close()
     
-    if GrCond: myenGra  = np.zeros(myshape)
+    # For each output: zero the non-finite values, integrate in time (Equation 9), and gather and write both the rate of
+    # change (eq6_) and the eigenenergy (eq9_) slabs, freeing each output as soon as it is written
+    if ct.rank == ct.mainrank: print("  integrating in time and writing the " + ct.decomposition + " outputs", flush=True)
+    for name in names:
+        myDDT = myDDTen.pop(name)
+        myDDT[~np.isfinite(myDDT)] = 0
+        myen  = timeIntegral(myDDT, time, axis=-1, initial=0).astype(ct.dtype, copy=False)
+        write('eq6_' + name, myDDT)
+        del(myDDT)
+        write('eq9_' + name, myen)
+        del(myen)
+        if ct.rank == ct.mainrank: print("  written: eq6_" + name + ", eq9_" + name, flush=True)
     
-    if set.mode == "XYZUpDownSeparated":
-        myenAlfx_2 = np.zeros(myshape)
-        myenAlfy_2 = np.zeros(myshape)
-        myenAlfz_2 = np.zeros(myshape)
-        myenSlox_2 = np.zeros(myshape)
-        myenSloy_2 = np.zeros(myshape)
-        myenSloz_2 = np.zeros(myshape)
-        myenFasx_2 = np.zeros(myshape)
-        myenFasy_2 = np.zeros(myshape)
-        myenFasz_2 = np.zeros(myshape)
-        
-    
-    if ct.rank == ct.mainrank: print("\nComputing the time integrals...\n")
-    for ipnt in range(myshape[0]):
-        for k1 in range(myshape[1]):
-            for k2 in range(myshape[2]):
-                # DivB
-                dat                      = myDDTenDivx[ipnt,k1,k2,:]
-                mask                     = np.isnan(dat)
-                dat[mask]                = 0
-                myenDivx[ipnt,k1,k2,:]   = timeIntegral(dat,time,axis=0,initial=0)
-                dat                      = myDDTenDivy[ipnt,k1,k2,:]
-                mask                     = np.isnan(dat)
-                dat[mask]                = 0
-                myenDivy[ipnt,k1,k2,:]   = timeIntegral(dat,time,axis=0,initial=0)
-                dat                      = myDDTenDivz[ipnt,k1,k2,:]
-                mask                     = np.isnan(dat)
-                dat[mask]                = 0
-                myenDivz[ipnt,k1,k2,:]   = timeIntegral(dat,time,axis=0,initial=0)
-                # DivB1
-                if ct.ErCond:
-                    dat                      = myDDTenDiv1[ipnt,k1,k2,:]
-                    mask                     = np.isnan(dat)
-                    dat[mask]                = 0
-                    myenDiv1[ipnt,k1,k2,:]    = timeIntegral(dat,time,axis=0,initial=0)
-                # Ent
-                dat                      = myDDTenEntx[ipnt,k1,k2,:]
-                mask                     = np.isnan(dat)
-                dat[mask]                = 0
-                myenEntx[ipnt,k1,k2,:]   = timeIntegral(dat,time,axis=0,initial=0)
-                dat                      = myDDTenEnty[ipnt,k1,k2,:]
-                mask                     = np.isnan(dat)
-                dat[mask]                = 0
-                myenEnty[ipnt,k1,k2,:]   = timeIntegral(dat,time,axis=0,initial=0)
-                dat                      = myDDTenEntz[ipnt,k1,k2,:]
-                mask                     = np.isnan(dat)
-                dat[mask]                = 0
-                myenEntz[ipnt,k1,k2,:]   = timeIntegral(dat,time,axis=0,initial=0)
-                # Grav
-                if GrCond:
-                    dat                      = myDDTenGra[ipnt,k1,k2,:]
-                    mask                     = np.isnan(dat)
-                    dat[mask]                = 0
-                    myenGra[ipnt,k1,k2,:]    = timeIntegral(dat,time,axis=0,initial=0)
-                # Alfven
-                dat                      = myDDTenAlfx[ipnt,k1,k2,:]
-                mask                     = np.isnan(dat)
-                dat[mask]                = 0
-                myenAlfx[ipnt,k1,k2,:]   = timeIntegral(dat,time,axis=0,initial=0)
-                
-                dat                      = myDDTenAlfy[ipnt,k1,k2,:]
-                mask                     = np.isnan(dat)
-                dat[mask]                = 0
-                myenAlfy[ipnt,k1,k2,:]   = timeIntegral(dat,time,axis=0,initial=0)
-                
-                dat                      = myDDTenAlfz[ipnt,k1,k2,:]
-                mask                     = np.isnan(dat)
-                dat[mask]                = 0
-                myenAlfz[ipnt,k1,k2,:]   = timeIntegral(dat,time,axis=0,initial=0)
-                
-                # Slow
-                dat                      = myDDTenSlox[ipnt,k1,k2,:]
-                mask                     = np.isnan(dat)
-                dat[mask]                = 0
-                mask                     = np.isinf(dat)
-                dat[mask]                = 0
-                myenSlox[ipnt,k1,k2,:]   = timeIntegral(dat,time,axis=0,initial=0)
-                
-                dat                      = myDDTenSloy[ipnt,k1,k2,:]
-                mask                     = np.isnan(dat)
-                dat[mask]                = 0
-                mask                     = np.isinf(dat)
-                dat[mask]                = 0
-                myenSloy[ipnt,k1,k2,:]   = timeIntegral(dat,time,axis=0,initial=0)
-                
-                dat                      = myDDTenSloz[ipnt,k1,k2,:]
-                mask                     = np.isnan(dat)
-                dat[mask]                = 0
-                mask                     = np.isinf(dat)
-                dat[mask]                = 0
-                myenSloz[ipnt,k1,k2,:]   = timeIntegral(dat,time,axis=0,initial=0)
-                
-                # Fast
-                dat                      = myDDTenFasx[ipnt,k1,k2,:]
-                mask                     = np.isnan(dat)
-                dat[mask]                = 0
-                myenFasx[ipnt,k1,k2,:]   = timeIntegral(dat,time,axis=0,initial=0)
-                
-                dat                      = myDDTenFasy[ipnt,k1,k2,:]
-                mask                     = np.isnan(dat)
-                dat[mask]                = 0
-                myenFasy[ipnt,k1,k2,:]   = timeIntegral(dat,time,axis=0,initial=0)
-                
-                dat                      = myDDTenFasz[ipnt,k1,k2,:]
-                mask                     = np.isnan(dat)
-                dat[mask]                = 0
-                myenFasz[ipnt,k1,k2,:]   = timeIntegral(dat,time,axis=0,initial=0)
-                
-                if set.mode == "XYZUpDownSeparated":
-                    # Alfven
-                    dat                      = myDDTenAlfx_2[ipnt,k1,k2,:]
-                    mask                     = np.isnan(dat)
-                    dat[mask]                = 0
-                    myenAlfx_2[ipnt,k1,k2,:]   = timeIntegral(dat,time,axis=0,initial=0)
-                                
-                    dat                      = myDDTenAlfy_2[ipnt,k1,k2,:]
-                    mask                     = np.isnan(dat)
-                    dat[mask]                = 0
-                    myenAlfy_2[ipnt,k1,k2,:]   = timeIntegral(dat,time,axis=0,initial=0)
-                                
-                    dat                      = myDDTenAlfz_2[ipnt,k1,k2,:]
-                    mask                     = np.isnan(dat)
-                    dat[mask]                = 0
-                    myenAlfz_2[ipnt,k1,k2,:]   = timeIntegral(dat,time,axis=0,initial=0)
-                                
-                    # Slow
-                    dat                      = myDDTenSlox_2[ipnt,k1,k2,:]
-                    mask                     = np.isnan(dat)
-                    dat[mask]                = 0
-                    mask                     = np.isinf(dat)
-                    dat[mask]                = 0
-                    myenSlox_2[ipnt,k1,k2,:]   = timeIntegral(dat,time,axis=0,initial=0)
-                                
-                    dat                      = myDDTenSloy_2[ipnt,k1,k2,:]
-                    mask                     = np.isnan(dat)
-                    dat[mask]                = 0
-                    mask                     = np.isinf(dat)
-                    dat[mask]                = 0
-                    myenSloy_2[ipnt,k1,k2,:]   = timeIntegral(dat,time,axis=0,initial=0)
-                                
-                    dat                      = myDDTenSloz_2[ipnt,k1,k2,:]
-                    mask                     = np.isnan(dat)
-                    dat[mask]                = 0
-                    mask                     = np.isinf(dat)
-                    dat[mask]                = 0
-                    myenSloz_2[ipnt,k1,k2,:]   = timeIntegral(dat,time,axis=0,initial=0)
-                                
-                    # Fast
-                    dat                      = myDDTenFasx_2[ipnt,k1,k2,:]
-                    mask                     = np.isnan(dat)
-                    dat[mask]                = 0
-                    myenFasx_2[ipnt,k1,k2,:]   = timeIntegral(dat,time,axis=0,initial=0)
-                                
-                    dat                      = myDDTenFasy_2[ipnt,k1,k2,:]
-                    mask                     = np.isnan(dat)
-                    dat[mask]                = 0
-                    myenFasy_2[ipnt,k1,k2,:]   = timeIntegral(dat,time,axis=0,initial=0)
-                                
-                    dat                      = myDDTenFasz_2[ipnt,k1,k2,:]
-                    mask                     = np.isnan(dat)
-                    dat[mask]                = 0
-                    myenFasz_2[ipnt,k1,k2,:]   = timeIntegral(dat,time,axis=0,initial=0)
-                    
-    mask,dat = 0,0
-    
-    del(mask,
-        dat)
-    
-    
-    if ct.rank == ct.mainrank: print("Gathering the rate of energy change components...\n")
-    
-    DDTenDivx       = APP.mpi.gather_array_ND(ct.comm, ct.rank, ct.mainrank, domDecompND, myDDTenDivx)
-    DDTenEntx       = APP.mpi.gather_array_ND(ct.comm, ct.rank, ct.mainrank, domDecompND, myDDTenEntx)
-    DDTenAlfx       = APP.mpi.gather_array_ND(ct.comm, ct.rank, ct.mainrank, domDecompND, myDDTenAlfx)
-    
-    if set.mode == "XYZUpDownSeparated":
-        DDTenAlfx_2 = APP.mpi.gather_array_ND(ct.comm, ct.rank, ct.mainrank, domDecompND, myDDTenAlfx_2)
-    
-    if ct.ErCond: 
-        DDTenDiv1   = APP.mpi.gather_array_ND(ct.comm, ct.rank, ct.mainrank, domDecompND, myDDTenDiv1)
-    
-    if GrCond:
-        DDTenGra    = APP.mpi.gather_array_ND(ct.comm, ct.rank, ct.mainrank, domDecompND, myDDTenGra)
-    
-    if ct.rank == ct.mainrank:
-        print("X-components of the modes 1, 2, and 3 of Equations6 gatehred, starting to write to file!\n")
+    if ct.rank == ct.mainrank and empty:
         for ipnt in range(lenq):
             hdf = h5py.File(outfilename1[ipnt], "a")
-            hdf.create_dataset('eq6_m1_x',data=np.array(DDTenDivx[ipnt,:,:,:], dtype='float64'), compression='gzip', compression_opts=9)
-            hdf.create_dataset('eq6_m2_x',data=np.array(DDTenEntx[ipnt,:,:,:], dtype='float64'), compression='gzip', compression_opts=9) 
-            hdf.create_dataset('eq6_m3_x',data=np.array(DDTenAlfx[ipnt,:,:,:], dtype='float64'), compression='gzip', compression_opts=9)
-            if set.mode == "XYZUpDownSeparated":
-                hdf.create_dataset('eq6_m4_x'  ,data=np.array(DDTenAlfx_2[ipnt,:,:,:], dtype='float64'), compression='gzip', compression_opts=9)
-            if ct.ErCond: 
-                hdf.create_dataset('eq6_m1_err',data=np.array(DDTenDiv1[ipnt,:,:,:]  , dtype='float64'), compression='gzip', compression_opts=9)
-            if GrCond: 
-                hdf.create_dataset('eq6_m9_z'  ,data=np.array(DDTenGra[ipnt,:,:,:]   , dtype='float64'), compression='gzip', compression_opts=9)
+            for name in empty:
+                for pre in ('eq6_', 'eq9_'):
+                    hdf.create_dataset(pre + name, data=np.array([0], dtype=ct.dtype), compression='gzip', compression_opts=9)
             hdf.close()
-    
-    del(myDDTenEntx,
-        myDDTenAlfx,
-        DDTenAlfx  ,
-        myDDTenDivx)
-    
-    if set.mode == "XYZUpDownSeparated": 
-        del(myDDTenAlfx_2,
-            DDTenAlfx_2  ,
-            DDTenEntx    ,
-            DDTenDivx)
-    
-    if ct.ErCond:                         
-        del(myDDTenDiv1,
-            DDTenDiv1)
-    
-    if GrCond:                            
-        del(myDDTenGra,
-            DDTenGra)
-    
-    DDTenDivy   = APP.mpi.gather_array_ND(ct.comm, ct.rank, ct.mainrank, domDecompND, myDDTenDivy)
-    DDTenDivz   = APP.mpi.gather_array_ND(ct.comm, ct.rank, ct.mainrank, domDecompND, myDDTenDivz)
-    DDTenEnty   = APP.mpi.gather_array_ND(ct.comm, ct.rank, ct.mainrank, domDecompND, myDDTenEnty)
-    DDTenEntz   = APP.mpi.gather_array_ND(ct.comm, ct.rank, ct.mainrank, domDecompND, myDDTenEntz)
-    
-    if ct.rank == ct.mainrank:
-        print("eq6_m1_y,eq6_m1_z,eq6_m2_y,eq6_m2_z gatehred, starting to write to file!\n")
-        for ipnt in range(lenq):
-            hdf = h5py.File(outfilename1[ipnt], "a")
-            hdf.create_dataset('eq6_m1_y', data=np.array(DDTenDivy[ipnt,:,:,:], dtype='float64'), compression='gzip', compression_opts=9)
-            hdf.create_dataset('eq6_m1_z', data=np.array(DDTenDivz[ipnt,:,:,:], dtype='float64'), compression='gzip', compression_opts=9)
-            hdf.create_dataset('eq6_m2_y', data=np.array(DDTenEnty[ipnt,:,:,:], dtype='float64'), compression='gzip', compression_opts=9)
-            hdf.create_dataset('eq6_m2_z', data=np.array(DDTenEntz[ipnt,:,:,:], dtype='float64'), compression='gzip', compression_opts=9)
-            hdf.close()
-    
-    del(DDTenDivy  ,
-        DDTenDivz  ,
-        DDTenEnty  ,
-        DDTenEntz  ,
-        myDDTenDivy,
-        myDDTenDivz,
-        myDDTenEnty,
-        myDDTenEntz)
-    
-    DDTenSlox   = APP.mpi.gather_array_ND(ct.comm, ct.rank, ct.mainrank, domDecompND, myDDTenSlox)
-    DDTenFasx   = APP.mpi.gather_array_ND(ct.comm, ct.rank, ct.mainrank, domDecompND, myDDTenFasx)
-    DDTenAlfy   = APP.mpi.gather_array_ND(ct.comm, ct.rank, ct.mainrank, domDecompND, myDDTenAlfy)
-    
-    if set.mode == "XYZUpDownSeparated": 
-        DDTenSlox_2 = APP.mpi.gather_array_ND(ct.comm, ct.rank, ct.mainrank, domDecompND, myDDTenSlox_2)
-        DDTenFasx_2 = APP.mpi.gather_array_ND(ct.comm, ct.rank, ct.mainrank, domDecompND, myDDTenFasx_2)
-        DDTenAlfy_2 = APP.mpi.gather_array_ND(ct.comm, ct.rank, ct.mainrank, domDecompND, myDDTenAlfy_2)
-    
-    if ct.rank == ct.mainrank:
-        print("eq6_m5_x,eq6_m7_x,eq6_m3_y gatehred, starting to write to file!\n")
-        for ipnt in range(lenq):
-            hdf = h5py.File(outfilename1[ipnt], "a")
-            hdf.create_dataset('eq6_m5_x'    , data=np.array(DDTenSlox[ipnt,:,:,:]  , dtype='float64'), compression='gzip', compression_opts=9)
-            hdf.create_dataset('eq6_m7_x'    , data=np.array(DDTenFasx[ipnt,:,:,:]  , dtype='float64'), compression='gzip', compression_opts=9)
-            hdf.create_dataset('eq6_m3_y'    , data=np.array(DDTenAlfy[ipnt,:,:,:]  , dtype='float64'), compression='gzip', compression_opts=9)
-            if set.mode == "XYZUpDownSeparated":
-                hdf.create_dataset('eq6_m6_x', data=np.array(DDTenSlox_2[ipnt,:,:,:], dtype='float64'), compression='gzip', compression_opts=9)
-                hdf.create_dataset('eq6_m8_x', data=np.array(DDTenFasx_2[ipnt,:,:,:], dtype='float64'), compression='gzip', compression_opts=9)
-                hdf.create_dataset('eq6_m4_y', data=np.array(DDTenAlfy_2[ipnt,:,:,:], dtype='float64'), compression='gzip', compression_opts=9)
-            hdf.close()
-    
-    del(DDTenSlox  ,
-        DDTenFasx  ,
-        DDTenAlfy  ,
-        myDDTenSlox,
-        myDDTenFasx,
-        myDDTenAlfy)
-    
-    if set.mode == "XYZUpDownSeparated":
-        del(DDTenSlox_2  ,
-            DDTenFasx_2  ,
-            DDTenAlfy_2  ,
-            myDDTenSlox_2,
-            myDDTenFasx_2,
-            myDDTenAlfy_2)
-    
-    DDTenSloy   = APP.mpi.gather_array_ND(ct.comm, ct.rank, ct.mainrank, domDecompND, myDDTenSloy)
-    DDTenFasy   = APP.mpi.gather_array_ND(ct.comm, ct.rank, ct.mainrank, domDecompND, myDDTenFasy)
-    DDTenAlfz   = APP.mpi.gather_array_ND(ct.comm, ct.rank, ct.mainrank, domDecompND, myDDTenAlfz)
-    
-    if set.mode == "XYZUpDownSeparated":
-        DDTenSloy_2 = APP.mpi.gather_array_ND(ct.comm, ct.rank, ct.mainrank, domDecompND, myDDTenSloy_2)
-        DDTenFasy_2 = APP.mpi.gather_array_ND(ct.comm, ct.rank, ct.mainrank, domDecompND, myDDTenFasy_2)
-        DDTenAlfz_2 = APP.mpi.gather_array_ND(ct.comm, ct.rank, ct.mainrank, domDecompND, myDDTenAlfz_2)
-    
-    if ct.rank == ct.mainrank:
-        print("eq6_m5_y,eq6_m7_y,eq6_m3_z gatehred, starting to write to file!\n")
-        for ipnt in range(lenq):
-            hdf = h5py.File(outfilename1[ipnt], "a")
-            hdf.create_dataset('eq6_m5_y'    , data=np.array(DDTenSloy[ipnt,:,:,:]  , dtype='float64'), compression='gzip', compression_opts=9)
-            hdf.create_dataset('eq6_m7_y'    , data=np.array(DDTenFasy[ipnt,:,:,:]  , dtype='float64'), compression='gzip', compression_opts=9)
-            hdf.create_dataset('eq6_m3_z'    , data=np.array(DDTenAlfz[ipnt,:,:,:]  , dtype='float64'), compression='gzip', compression_opts=9)
-            if set.mode == "XYZUpDownSeparated":
-                hdf.create_dataset('eq6_m6_y', data=np.array(DDTenSloy_2[ipnt,:,:,:], dtype='float64'), compression='gzip', compression_opts=9)
-                hdf.create_dataset('eq6_m8_y', data=np.array(DDTenFasy_2[ipnt,:,:,:], dtype='float64'), compression='gzip', compression_opts=9)
-                hdf.create_dataset('eq6_m4_z', data=np.array(DDTenAlfz_2[ipnt,:,:,:], dtype='float64'), compression='gzip', compression_opts=9)
-            hdf.close()
-    
-    del(DDTenSloy  ,
-        DDTenFasy  ,
-        DDTenAlfz  ,
-        myDDTenSloy,
-        myDDTenFasy,
-        myDDTenAlfz)
-    
-    if set.mode == "XYZUpDownSeparated":
-        del(DDTenSloy_2  ,
-            DDTenFasy_2  ,
-            DDTenAlfz_2  ,
-            myDDTenSloy_2,
-            myDDTenFasy_2,
-            myDDTenAlfz_2)
-    
-    DDTenSloz   = APP.mpi.gather_array_ND(ct.comm, ct.rank, ct.mainrank, domDecompND, myDDTenSloz)
-    DDTenFasz   = APP.mpi.gather_array_ND(ct.comm, ct.rank, ct.mainrank, domDecompND, myDDTenFasz)
-    
-    if set.mode == "XYZUpDownSeparated":
-        DDTenSloz_2 = APP.mpi.gather_array_ND(ct.comm, ct.rank, ct.mainrank, domDecompND, myDDTenSloz_2)
-        DDTenFasz_2 = APP.mpi.gather_array_ND(ct.comm, ct.rank, ct.mainrank, domDecompND, myDDTenFasz_2)
-    
-    if ct.rank == ct.mainrank:
-        print("eq6_m5_z,eq6_m7_z gatehred, starting to write to file!\n")
-        for ipnt in range(lenq):
-            hdf = h5py.File(outfilename1[ipnt], "a")
-            hdf.create_dataset('eq6_m5_z'    , data=np.array(DDTenSloz[ipnt,:,:,:]  , dtype='float64'), compression='gzip', compression_opts=9)
-            hdf.create_dataset('eq6_m7_z'    , data=np.array(DDTenFasz[ipnt,:,:,:]  , dtype='float64'), compression='gzip', compression_opts=9)
-            if set.mode == "XYZUpDownSeparated":
-                hdf.create_dataset('eq6_m6_z', data=np.array(DDTenSloz_2[ipnt,:,:,:], dtype='float64'), compression='gzip', compression_opts=9)
-                hdf.create_dataset('eq6_m8_z', data=np.array(DDTenFasz_2[ipnt,:,:,:], dtype='float64'), compression='gzip', compression_opts=9)
-            hdf.close()
-    
-    del(DDTenSloz  ,
-        DDTenFasz  ,
-        myDDTenSloz,
-        myDDTenFasz)
-    
-    if set.mode == "XYZUpDownSeparated":
-        del(DDTenSloz_2  ,
-            DDTenFasz_2  ,
-            myDDTenSloz_2,
-            myDDTenFasz_2)
-        
-    if ct.rank == ct.mainrank: print("Writing the rate of energy change components to file done!\n")
-    
-    
-    
-    if ct.rank == ct.mainrank: print("Gathering the eigenenergy components...\n")
-    
-    enDivx      = APP.mpi.gather_array_ND(ct.comm, ct.rank, ct.mainrank, domDecompND, myenDivx   ) 
-    enEntx      = APP.mpi.gather_array_ND(ct.comm, ct.rank, ct.mainrank, domDecompND, myenEntx   ) 
-    
-    if ct.EnCond: 
-        Etot  = APP.mpi.gather_array_ND(ct.comm, ct.rank, ct.mainrank, domDecompND, myEtot     )
-    
-    if ct.ErCond: 
-        enDiv1  = APP.mpi.gather_array_ND(ct.comm, ct.rank, ct.mainrank, domDecompND, myenDiv1   ) 
-    
-    if GrCond: 
-        enGra   = APP.mpi.gather_array_ND(ct.comm, ct.rank, ct.mainrank, domDecompND, myenGra    )
-    
-    if ct.rank == ct.mainrank:
-        print("eq9_m1_x,eq9_m2_x gatehred, starting to write to file!\n")
-        for ipnt in range(lenq):
-            hdf = h5py.File(outfilename1[ipnt], "a")
-            hdf.create_dataset(    'eq9_m1_x'  , data=np.array(enDivx[ipnt,:,:,:], dtype='float64'), compression='gzip', compression_opts=9)
-            hdf.create_dataset(    'eq9_m2_x'  , data=np.array(enEntx[ipnt,:,:,:], dtype='float64'), compression='gzip', compression_opts=9)
-            
-            if ct.EnCond: 
-                hdf.create_dataset(    'Etot'      , data=np.array(Etot[ipnt,:,:,:]  , dtype='float64'), compression='gzip', compression_opts=9)
-            
-            if ct.ErCond:
-                hdf.create_dataset('eq9_m1_err', data=np.array(enDiv1[ipnt,:,:,:], dtype='float64'), compression='gzip', compression_opts=9)
-            
-            if GrCond:
-                hdf.create_dataset('eq9_m9_z'  , data=np.array(enGra[ipnt,:,:,:] , dtype='float64'), compression='gzip', compression_opts=9)
-            
-            hdf.close()
-    
-    del(myenEntx,
-        myenDivx,
-        enDivx  ,
-        enEntx)
-    
-    if ct.EnCond: 
-        del(myEtot,
-            Etot)
-    
-    if ct.ErCond: 
-        del(myenDiv1,
-            enDiv1)
-    
-    if GrCond: 
-        del(myenGra,
-            enGra)
-    
-    enDivy      = APP.mpi.gather_array_ND(ct.comm, ct.rank, ct.mainrank, domDecompND, myenDivy   ) 
-    enDivz      = APP.mpi.gather_array_ND(ct.comm, ct.rank, ct.mainrank, domDecompND, myenDivz   ) 
-    enEnty      = APP.mpi.gather_array_ND(ct.comm, ct.rank, ct.mainrank, domDecompND, myenEnty   ) 
-    enEntz      = APP.mpi.gather_array_ND(ct.comm, ct.rank, ct.mainrank, domDecompND, myenEntz   ) 
-    
-    if ct.rank == ct.mainrank:
-        print("eq9_m1_y,eq9_m1_z,eq9_m2_y,eq9_m2_z gatehred, starting to write to file!\n")
-        for ipnt in range(lenq):
-            hdf = h5py.File(outfilename1[ipnt], "a")
-            hdf.create_dataset('eq9_m1_y', data=np.array(enDivy[ipnt,:,:,:], dtype='float64'), compression='gzip', compression_opts=9)
-            hdf.create_dataset('eq9_m1_z', data=np.array(enDivz[ipnt,:,:,:], dtype='float64'), compression='gzip', compression_opts=9)
-            hdf.create_dataset('eq9_m2_y', data=np.array(enEnty[ipnt,:,:,:], dtype='float64'), compression='gzip', compression_opts=9)
-            hdf.create_dataset('eq9_m2_z', data=np.array(enEntz[ipnt,:,:,:], dtype='float64'), compression='gzip', compression_opts=9)
-            hdf.close()
-    
-    del(enDivy  ,
-        enDivz  ,
-        enEnty  ,
-        enEntz  ,
-        myenDivy,
-        myenDivz,
-        myenEnty,
-        myenEntz)
-    
-    enAlfx      = APP.mpi.gather_array_ND(ct.comm, ct.rank, ct.mainrank, domDecompND, myenAlfx   ) 
-    enAlfy      = APP.mpi.gather_array_ND(ct.comm, ct.rank, ct.mainrank, domDecompND, myenAlfy   ) 
-    enAlfz      = APP.mpi.gather_array_ND(ct.comm, ct.rank, ct.mainrank, domDecompND, myenAlfz   ) 
-    
-    if set.mode == "XYZUpDownSeparated":
-        enAlfx_2 = APP.mpi.gather_array_ND(ct.comm, ct.rank, ct.mainrank, domDecompND, myenAlfx_2) 
-        enAlfy_2 = APP.mpi.gather_array_ND(ct.comm, ct.rank, ct.mainrank, domDecompND, myenAlfy_2) 
-        enAlfz_2 = APP.mpi.gather_array_ND(ct.comm, ct.rank, ct.mainrank, domDecompND, myenAlfz_2) 
-    
-    if ct.rank == ct.mainrank:
-        print("The Alfven terms in Equation 9 gatehred, starting to write to file!\n")
-        for ipnt in range(lenq):
-            hdf = h5py.File(outfilename1[ipnt], "a")
-            hdf.create_dataset('eq9_m3_x'    , data=np.array(enAlfx[ipnt,:,:,:]  , dtype='float64'), compression='gzip', compression_opts=9)
-            hdf.create_dataset('eq9_m3_y'    , data=np.array(enAlfy[ipnt,:,:,:]  , dtype='float64'), compression='gzip', compression_opts=9)
-            hdf.create_dataset('eq9_m3_z'    , data=np.array(enAlfz[ipnt,:,:,:]  , dtype='float64'), compression='gzip', compression_opts=9)
-            if set.mode == "XYZUpDownSeparated":
-                hdf.create_dataset('eq9_m4_x', data=np.array(enAlfx_2[ipnt,:,:,:], dtype='float64'), compression='gzip', compression_opts=9)
-                hdf.create_dataset('eq9_m4_y', data=np.array(enAlfy_2[ipnt,:,:,:], dtype='float64'), compression='gzip', compression_opts=9)
-                hdf.create_dataset('eq9_m4_z', data=np.array(enAlfz_2[ipnt,:,:,:], dtype='float64'), compression='gzip', compression_opts=9)
-            hdf.close()
-    
-    del(enAlfx  ,
-        myenAlfx,
-        enAlfy  ,
-        myenAlfy,
-        enAlfz  ,
-        myenAlfz)
-    
-    if set.mode == "XYZUpDownSeparated":
-        del(enAlfx_2  ,
-            myenAlfx_2,
-            enAlfy_2  ,
-            myenAlfy_2,
-            enAlfz_2  ,
-            myenAlfz_2)
-    
-    enSlox      = APP.mpi.gather_array_ND(ct.comm, ct.rank, ct.mainrank, domDecompND, myenSlox   ) 
-    enSloy      = APP.mpi.gather_array_ND(ct.comm, ct.rank, ct.mainrank, domDecompND, myenSloy   ) 
-    enSloz      = APP.mpi.gather_array_ND(ct.comm, ct.rank, ct.mainrank, domDecompND, myenSloz   ) 
-    
-    if set.mode == "XYZUpDownSeparated":
-        enSlox_2 = APP.mpi.gather_array_ND(ct.comm, ct.rank, ct.mainrank, domDecompND, myenSlox_2) 
-        enSloy_2 = APP.mpi.gather_array_ND(ct.comm, ct.rank, ct.mainrank, domDecompND, myenSloy_2) 
-        enSloz_2 = APP.mpi.gather_array_ND(ct.comm, ct.rank, ct.mainrank, domDecompND, myenSloz_2) 
-    
-    if ct.rank == ct.mainrank:
-        print("The slow terms in Equation 9 gatehred, starting to write to file!\n")
-        for ipnt in range(lenq):
-            hdf = h5py.File(outfilename1[ipnt], "a")
-            hdf.create_dataset('eq9_m5_x'    , data=np.array(enSlox[ipnt,:,:,:]  , dtype='float64'), compression='gzip', compression_opts=9)
-            hdf.create_dataset('eq9_m5_y'    , data=np.array(enSloy[ipnt,:,:,:]  , dtype='float64'), compression='gzip', compression_opts=9)
-            hdf.create_dataset('eq9_m5_z'    , data=np.array(enSloz[ipnt,:,:,:]  , dtype='float64'), compression='gzip', compression_opts=9)
-            if set.mode == "XYZUpDownSeparated":
-                hdf.create_dataset('eq9_m6_x', data=np.array(enSlox_2[ipnt,:,:,:], dtype='float64'), compression='gzip', compression_opts=9)
-                hdf.create_dataset('eq9_m6_y', data=np.array(enSloy_2[ipnt,:,:,:], dtype='float64'), compression='gzip', compression_opts=9)
-                hdf.create_dataset('eq9_m6_z', data=np.array(enSloz_2[ipnt,:,:,:], dtype='float64'), compression='gzip', compression_opts=9)
-            hdf.close()
-    
-    del(myenSlox,
-        myenSloy,
-        myenSloz,
-        enSlox  ,
-        enSloy  ,
-        enSloz)
-    
-    if set.mode == "XYZUpDownSeparated":
-        del(myenSlox_2,
-            myenSloy_2,
-            myenSloz_2,
-            enSlox_2  ,
-            enSloy_2  ,
-            enSloz_2)
-    
-    
-    enFasx      = APP.mpi.gather_array_ND(ct.comm, ct.rank, ct.mainrank, domDecompND, myenFasx   ) 
-    enFasy      = APP.mpi.gather_array_ND(ct.comm, ct.rank, ct.mainrank, domDecompND, myenFasy   ) 
-    enFasz      = APP.mpi.gather_array_ND(ct.comm, ct.rank, ct.mainrank, domDecompND, myenFasz   ) 
-    
-    if set.mode == "XYZUpDownSeparated":
-        enFasx_2 = APP.mpi.gather_array_ND(ct.comm, ct.rank, ct.mainrank, domDecompND, myenFasx_2) 
-        enFasy_2 = APP.mpi.gather_array_ND(ct.comm, ct.rank, ct.mainrank, domDecompND, myenFasy_2) 
-        enFasz_2 = APP.mpi.gather_array_ND(ct.comm, ct.rank, ct.mainrank, domDecompND, myenFasz_2) 
-    
-    if ct.rank == ct.mainrank:
-        print("The fast terms in Equation 9 gatehred, starting to write to file!\n")
-        for ipnt in range(lenq):
-            hdf = h5py.File(outfilename1[ipnt], "a")
-            hdf.create_dataset('eq9_m7_x'    , data=np.array(enFasx[ipnt,:,:,:]  , dtype='float64'), compression='gzip', compression_opts=9)
-            hdf.create_dataset('eq9_m7_y'    , data=np.array(enFasy[ipnt,:,:,:]  , dtype='float64'), compression='gzip', compression_opts=9)
-            hdf.create_dataset('eq9_m7_z'    , data=np.array(enFasz[ipnt,:,:,:]  , dtype='float64'), compression='gzip', compression_opts=9)
-            if set.mode == "XYZUpDownSeparated":
-                hdf.create_dataset('eq9_m8_x', data=np.array(enFasx_2[ipnt,:,:,:], dtype='float64'), compression='gzip', compression_opts=9)
-                hdf.create_dataset('eq9_m8_y', data=np.array(enFasy_2[ipnt,:,:,:], dtype='float64'), compression='gzip', compression_opts=9)
-                hdf.create_dataset('eq9_m8_z', data=np.array(enFasz_2[ipnt,:,:,:], dtype='float64'), compression='gzip', compression_opts=9)
-            hdf.close()
-    
-    del(enFasx  ,
-        myenFasx,
-        enFasy  ,
-        myenFasy,
-        enFasz  ,
-        myenFasz)
-    
-    if set.mode == "XYZUpDownSeparated":
-        del(enFasx_2  ,
-            myenFasx_2,
-            enFasy_2  ,
-            myenFasy_2,
-            enFasz_2  ,
-            myenFasz_2)
-    
+        print("  written: [0] placeholders for the invariant direction(s): " + ", ".join(empty), flush=True)
     
     ct.comm.barrier()
     
     if ct.rank == ct.mainrank:
-        print("\nEquation 9 computed and saved in " + dirDict["eq9"] + ".\n")
+        print("Equation 9 done: " + str(lenq) + " slab file(s) in " + dirDict["eq9"] + "\n", flush=True)
