@@ -92,7 +92,7 @@ Run the code from `EEDM/` using:
 
 Each MPI process holds a full snapshot (and many derived arrays) in memory while computing Equation 6, so choose the number of processes according to the available memory rather than the number of cores.
 
-At the start, EEDM prints a summary of the run (simulation code, data, number of snapshots, dimensions, the domain along x, y, and z (number of cells, length, and range of the cell centres, after cropping, in the units of the analysis), MPI processes, units, gravity, gamma, precision, and decomposition) and checks the settings, including the positions of the Equation 9 slabs, which it lists before Equation 6 starts. This way, mistakes are reported before any computation. An error on any MPI process stops the whole run.
+At the start, EEDM prints a summary of the run (simulation code, data, number of snapshots, dimensions, a table of the domain along x, y, and z (number of cells, length, and range of the cell centres, for both the full snapshot and the analysed domain after cropping, in the units of the analysis), MPI processes, units, gravity, gamma, precision, and decomposition) and checks the settings, including the positions of the Equation 9 slabs, which it lists before Equation 6 starts. This way, mistakes are reported before any computation. An error on any MPI process stops the whole run.
 
 ### Note
 EEDM always reads the `settings.py` in the directory it is run from, so run it from `EEDM/` as above, or from any directory holding its own copy of `settings.py`. If there is none, EEDM stops with an error saying so.

@@ -72,6 +72,17 @@ def _abort_on_error(exc_type, exc, tb):
 sys.excepthook = _abort_on_error
 
 
+# The run header's logo: a wave (a disturbance) split into its eigenmodes, with the reverse (-) and forward (+) mode of each branch
+LOGO = r"""
+   _____ _____ ____  __  __          ,----------- fast       f-  f+
+  | ____| ____|  _ \|  \/  |        /.----------- Alfven     A-  A+
+  |  _| |  _| | | | | |\/| |  ~~~~~<------------- slow       s-  s+
+  | |___| |___| |_| | |  | |        \'----------- entropy    ent
+  |_____|_____|____/|_|  |_|         '----------- div, g
+  EigenEnergy Decomposition Method   (Raboonik et al. 2024a, 2024b, 2025)
+"""
+
+
 def axis_length(centres, faces=None):
     '''Length of the domain along one axis: from the cell faces where the code has them (LARE), otherwise the span of the cell
     centres plus half a cell at each end (exact for uniform grids).'''
@@ -80,21 +91,42 @@ def axis_length(centres, faces=None):
     return float(c[-1] - c[0]) + (0.5 * float(c[1] - c[0] + c[-1] - c[-2]) if len(c) > 1 else 0.0)
 
 
-def domain_lines(grid, faces, invariant, fullGrid=None, fullFaces=None):
-    '''One header line per axis: number of cells, domain length, and range of the cell centres (after cropping), plus the
-    snapshot's full extent when the domain was cropped.'''
-    lines = []
+def domain_table(grid, faces, invariant, fullGrid=None, fullFaces=None):
+    '''
+        The run header's domain table, one row per axis: the full snapshot and the analysed domain (after cropping), each as
+        number of cells, length, and range of the cell centres. Without the full grid (Equation 9 only runs, which only know
+        the grid of the Equation 6 run), only the analysed columns are shown.
+    '''
+    def cols(c, f):
+        c = np.asarray(c, dtype=float)
+        return ["%d" % len(c), "%g" % axis_length(c, f), "[%g, %g]" % (c[0], c[-1])]
+    rows = []
     for k, a in enumerate("xyz"):
-        c = np.asarray(grid[k], dtype=float)
+        full = None if fullGrid is None else cols(fullGrid[k], None if fullFaces is None else fullFaces[k])
         if a in invariant:
-            text = "invariant (reduced to 1 cell, at %s = %g)" % (a, c[0])
-            if fullGrid is not None: text += "; the snapshot has %d cell(s) along %s" % (len(fullGrid[k]), a)
+            ana = "invariant: 1 cell at %s = %g" % (a, float(np.asarray(grid[k])[0]))
+        elif fullGrid is not None and len(fullGrid[k]) == len(grid[k]):
+            ana = "not cropped"
         else:
-            text = "%d cells, length %g (cell centres from %g to %g)" % (len(c), axis_length(c, None if faces is None else faces[k]), c[0], c[-1])
-            if fullGrid is not None and len(fullGrid[k]) != len(c):
-                text += "; cropped from %d cells, length %g" % (len(fullGrid[k]), axis_length(fullGrid[k], None if fullFaces is None else fullFaces[k]))
-        lines.append("%s: %s" % (a, text))
-    return lines
+            ana = cols(grid[k], None if faces is None else faces[k])
+        rows.append((a, full, ana))
+    
+    sub   = ["cells", "length", "cell centres"]
+    width = lambda j, which: max([len(sub[j])] + [len(r[which][j]) for r in rows if isinstance(r[which], list)])
+    def block(values, which):
+        if isinstance(values, str): return values
+        w = [width(j, which) for j in range(3)]
+        return "%*s  %-*s  %-*s" % (w[0], values[0], w[1], values[1], w[2], values[2])
+    heads = [("full snapshot", 1), ("analysed (after cropping)", 2)] if fullGrid is not None else [("analysed", 2)]
+    wcol  = [max(len(block(sub, which)), len(title), max(len(block(r[which], which)) for r in rows)) for title, which in heads]
+    line  = lambda cells: "  q | " + " | ".join("%-*s" % (w, c) for w, c in zip(wcol, cells))
+    out   = ["    | " + " | ".join(title.center(w) for (title, _), w in zip(heads, wcol)),
+             line([block(sub, which) for _, which in heads]).replace("  q |", "  q |"),
+             "  --+" + "+".join("-" * (w + 2) for w in wcol)]
+    for a, full, ana in rows:
+        cells = ([block(full, 1)] if fullGrid is not None else []) + [block(ana, 2)]
+        out.append(("  %s | " % a) + " | ".join("%-*s" % (w, c) for w, c in zip(wcol, cells)))
+    return [o.rstrip() for o in out]
 
 
 def print_header(outDirec, dirDict, readObj=None):
@@ -102,7 +134,7 @@ def print_header(outDirec, dirDict, readObj=None):
     if readObj is not None:
         nSnap = readObj.nt
         faces = None if readObj.xb is None else (readObj.xb, readObj.yb, readObj.zb)
-        dom   = domain_lines((readObj.xc, readObj.yc, readObj.zc), faces, ct.invariantAxes, readObj.fullGrid, readObj.fullFaces)
+        dom   = domain_table((readObj.xc, readObj.yc, readObj.zc), faces, ct.invariantAxes, readObj.fullGrid, readObj.fullFaces)
     else:
         # Equation 9 only: the grid of the Equation 6 run that produced the files
         nSnap = len(io.reader.select_snapshots()[0])                  # on all ranks, so any error is raised everywhere
@@ -112,7 +144,7 @@ def print_header(outDirec, dirDict, readObj=None):
             with h5py.File(gp, "r") as h:
                 faces = (h["xb"][()], h["yb"][()], h["zb"][()]) if "xb" in h else None
                 inv   = [a for a in str(h.attrs.get("invariantAxes", "")).split(",") if a]
-                dom   = domain_lines((h["xc"][()], h["yc"][()], h["zc"][()]), faces, inv)
+                dom   = domain_table((h["xc"][()], h["yc"][()], h["zc"][()]), faces, inv)
         else:
             dom = ["not known yet (no grid_params.h5 from an Equation 6 run)"]
     if ct.rank != ct.mainrank: return
@@ -121,13 +153,12 @@ def print_header(outDirec, dirDict, readObj=None):
     units = "SI (mu0 = %.6g)" % const.mu0 if settings.dimensionality_switch else "non-dimensional (mu0 = 1)"
     grav  = ("g = %g along -%s" % (settings.g, ct.verticalAxis) if settings.g > 0 else "none (g = 0)") + \
             ("" if ct.verticalAxis == "z" else " (vertical axis %s: rotated to EEDM's z internally, outputs in the simulation's axes)" % ct.verticalAxis)
-    print("EEDM: eigenenergy decomposition of Paper III (Equations 6 and 9)")
+    print(LOGO)
     for label, value in (("simulation code", settings.simCode + " (." + settings.dataExt + " snapshots)"),
                          ("data"           , settings.datapath),
                          ("snapshots"      , "%d selected (dataInterval = [%s, %s], skip = %s)" % (nSnap, first, last, settings.skip)),
                          ("dimensions"     , "3D" if not ct.invariantAxes else "%dD (invariant along %s)" % (ct.dimensions, " and ".join(ct.invariantAxes))),
-                         ("domain (%s)" % ("m" if settings.dimensionality_switch else "code units"), dom[0]),
-                         *(("", line) for line in dom[1:]),
+                         ("domain (%s)" % ("m" if settings.dimensionality_switch else "code units"), None),
                          ("MPI ranks"      , ct.size),
                          ("units"          , units),
                          ("gravity"        , grav),
@@ -136,7 +167,11 @@ def print_header(outDirec, dirDict, readObj=None):
                          ("decomposition"  , ct.decomposition),
                          ("computing"      , task),
                          ("output"         , outDirec)):
-        print("  %-19s%s %s" % (label, ":" if label else " ", value))
+        if value is None:                                             # the domain table, as a block under its label
+            print("  %s:" % label)
+            for row in dom: print("      " + row)
+        else:
+            print("  %-19s: %s" % (label, value))
     print("", flush=True)
     for note in ([] if readObj is None else readObj.notes): print(note + "\n", flush=True)
 
