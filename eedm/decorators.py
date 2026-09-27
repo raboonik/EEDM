@@ -23,21 +23,14 @@ def timeit(func):
         start = time.time()
         result = func(*args, **kwargs)
         duration = time.time() - start
-        if context.rank == context.mainrank: print(f"[TIME] {func.__name__} ran in {duration:.3f} seconds\n")
+        if context.rank == context.mainrank:
+            h, rest = divmod(duration, 3600)
+            m, sec  = divmod(rest, 60)
+            print("[TIME] " + func.__name__ + " ran in " + (("%d h %d min " % (h, m)) if h else ("%d min " % m) if m else "") + "%.1f s\n" % sec)
         return result
     return wrapper
 
 def memoize(func):
-    cache = {}
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        key = str(args) + str(kwargs)
-        if key not in cache:
-            cache[key] = func(*args, **kwargs)
-        return cache[key]
-    return wrapper
-
-def cache(func):
     cache = {}
     @functools.wraps(func)
     def wrapper(*args, **kwargs):

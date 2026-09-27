@@ -1,5 +1,5 @@
-from . import reader, extensionLoader, larexd, mancha
+from . import reader, extensionLoader, larexd, mancha, pencil
 
 __all__ = [
-    "reader", "extensionLoader", "larexd", "mancha"
+    "reader", "extensionLoader", "larexd", "mancha", "pencil"
 ]

@@ -19,7 +19,6 @@ def getCellVals3D(data,quantity):
         out = 0.5*(data + np.roll(data,-1,axis=2))
         out = out[:,:,0:-1]
     else:
-        out = np.nan
-        print("Enter an appropriate quantitiy! Returning NaN.")
+        raise ValueError('getCellVals3D: quantity must be "v", "bx", "by", or "bz", not ' + repr(quantity) + '.')
     
     return out
